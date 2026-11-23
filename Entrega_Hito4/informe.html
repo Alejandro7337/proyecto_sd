@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe técnico · Tu Espacio</title>
+<style>
+@page { size: A4; margin: 15mm 14mm 15mm 14mm;
+  @bottom-right { content: "Tu Espacio · Informe técnico · " counter(page); font: 7.5pt "Segoe UI", sans-serif; color: #64748B; }
+}
+@page :first { @bottom-right { content: none; } }
+:root { --navy:#0B2545; --accent:#3FA2FF; --blue:#1F6FD1; --muted:#475569; --line:#CBD3DE; --soft:#F4F6F9; --ok:#047857; --warn:#B45309; --bad:#DC2626; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 8.9pt; line-height: 1.38; color: #0F1B2D; margin: 0; background: #fff; }
+h1 { font-size: 13.5pt; color: var(--navy); margin: 0 0 4pt; padding-bottom: 3pt; border-bottom: 2px solid var(--accent); break-after: avoid; }
+h2 { font-size: 10.5pt; color: var(--navy); margin: 8pt 0 3pt; break-after: avoid; }
+h3 { font-size: 9.2pt; color: var(--blue); margin: 6pt 0 2pt; break-after: avoid; }
+p { margin: 0 0 4pt; text-align: justify; }
+ul, ol { margin: 0 0 4pt; padding-left: 14pt; }
+li { margin-bottom: 1pt; }
+section { margin-bottom: 6pt; }
+.newpage { break-before: page; }
+table { width: 100%; border-collapse: collapse; margin: 3pt 0 6pt; font-size: 7.7pt; line-height: 1.28; break-inside: auto; }
+th { background: var(--navy); color: #fff; text-align: left; padding: 2.5pt 3.5pt; font-weight: 600; vertical-align: bottom; }
+td { border-bottom: 0.6pt solid var(--line); padding: 2.2pt 3.5pt; vertical-align: top; }
+tr { break-inside: avoid; }
+table tr:first-child { break-after: avoid; }
+h1 + p, h2 + p, h2 + table, h3 + p { break-before: avoid; }
+tbody tr:nth-child(even) td { background: #F8FAFC; }
+td.k, th.k { font-weight: 600; color: var(--navy); white-space: nowrap; }
+code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 7.4pt; }
+pre { font-family: Consolas, monospace; font-size: 6.9pt; line-height: 1.25; background: var(--soft); border: 0.6pt solid var(--line); border-radius: 4pt; padding: 4pt 6pt; margin: 3pt 0 6pt; white-space: pre-wrap; break-inside: avoid; }
+.fig { margin: 4pt 0 6pt; text-align: center; break-inside: avoid; }
+.fig svg { width: 100%; height: auto; }
+.cap { font-size: 7.4pt; color: var(--muted); text-align: center; margin-top: 2pt; }
+.note { background: #EEF7FF; border-left: 3pt solid var(--accent); padding: 3pt 6pt; margin: 3pt 0 6pt; font-size: 8.2pt; break-inside: avoid; }
+.warnbox { background: #FFF7ED; border-left: 3pt solid #F97316; padding: 3pt 6pt; margin: 3pt 0 6pt; font-size: 8.2pt; break-inside: avoid; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
+.cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6pt; }
+.pill { display: inline-block; padding: 0 4pt; border-radius: 6pt; font-size: 7pt; font-weight: 600; }
+.ok { background: #D1FAE5; color: var(--ok); } .part { background: #FFEDD5; color: var(--warn); } .no { background: #FEE2E2; color: var(--bad); } .des { background: #E0E7FF; color: #3730A3; }
+/* Portada */
+.cover { height: 265mm; display: flex; flex-direction: column; justify-content: space-between; }
+.cover .band { background: var(--navy); color: #fff; padding: 22pt 22pt 18pt; border-radius: 10pt; }
+.cover .logo { display: inline-flex; width: 38pt; height: 38pt; border-radius: 9pt; background: var(--accent); color: var(--navy); font-weight: 800; font-size: 24pt; align-items: center; justify-content: center; }
+.cover h0 { display: block; font-size: 28pt; font-weight: 800; margin: 10pt 0 2pt; letter-spacing: .5pt; }
+.cover .sub { font-size: 12pt; color: #BFE0FF; }
+.cover .meta { font-size: 9.5pt; line-height: 1.6; }
+.cover .meta b { color: var(--navy); }
+/* Maquetas */
+.phones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5pt; margin: 4pt 0; }
+.phone { border: 1.4pt solid var(--navy); border-radius: 11pt; padding: 5pt 5pt 6pt; font-size: 6.4pt; line-height: 1.3; break-inside: avoid; background: #fff; }
+.phone .bar { background: var(--navy); color: #fff; border-radius: 6pt; padding: 3pt 4pt; font-weight: 700; font-size: 6.8pt; margin-bottom: 3pt; }
+.phone .bar { position: relative; padding-right: 15pt; }
+.phone .flag { position: absolute; right: 4pt; top: 3pt; font-weight: 600; color: var(--accent); }
+.phone .row span:last-child { white-space: nowrap; }
+.phone .row { display: flex; justify-content: space-between; gap: 3pt; border-bottom: 0.4pt dotted var(--line); padding: 1pt 0; }
+.phone .row.tot { font-weight: 800; color: var(--navy); border-bottom: none; font-size: 7.2pt; }
+.phone .lbl { color: var(--muted); font-size: 5.9pt; text-transform: uppercase; letter-spacing: .3pt; margin-top: 3pt; }
+.phone .btn { background: var(--navy); color: #fff; text-align: center; border-radius: 5pt; padding: 2.5pt; font-weight: 700; margin-top: 3pt; }
+.phone .tick { border: 0.8pt dashed var(--navy); border-radius: 5pt; padding: 3pt; margin-top: 4pt; background: #F8FAFC; }
+.phone .chips span { display: inline-block; border: 0.5pt solid var(--line); border-radius: 5pt; padding: 0 2.5pt; margin: 1pt 1pt 0 0; }
+.phone .chips span.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.swatch { display: inline-block; width: 9pt; height: 9pt; border-radius: 2pt; vertical-align: -1pt; margin-right: 2pt; border: 0.5pt solid #94A3B8; }
+.small { font-size: 7.6pt; }
+.toc { columns: 2; font-size: 8.6pt; margin-top: 4pt; }
+.toc div { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<div class="cover">
+  <div class="band">
+    <div class="logo">P</div>
+    <h0>TU ESPACIO</h0>
+    <div class="sub">Tu parqueadero, resuelto antes de salir.</div>
+    <div style="margin-top:14pt;font-size:13pt;font-weight:600">Informe técnico · Diseño de un Sistema Distribuido</div>
+    <div style="font-size:10pt;color:#BFE0FF">Hito 4 y sustentación: prototipo funcional, pruebas y documento consolidado del diseño (Hitos 1 a 3)</div>
+  </div>
+
+  <div class="meta">
+    <p style="text-align:left"><b>Caso diseñado:</b> plataforma distribuida de reserva anticipada de parqueadero por destino (parqueaderos formales y espacios particulares) que opera simultáneamente en <b>cinco países</b> (Colombia, Brasil, Estados Unidos, Francia y Japón), con cinco monedas, cinco idiomas y configuración regional completa, sin ramas de código por país.</p>
+    <div class="cols2" style="margin-top:10pt">
+      <div><b>Integrantes</b><br>Alejandro Alba Malagón<br>Juan David Hernández Palomino<br>David Santiago Mahecha Cruz<br>Juan Esteban Nocua Camacho</div>
+      <div><b>Asignatura</b><br>Sistemas Distribuidos · Tercer corte (20 %)<br><b>Docente</b><br>Orlando Cristancho Carrillo<br><b>Universidad Central</b> · Facultad de Ingeniería y Ciencias Básicas<br>Bogotá, noviembre de 2026</div>
+    </div>
+    <div class="toc" style="margin-top:14pt">
+      <div>1. Oportunidad de negocio y caso</div>
+      <div>2. Propuesta de solución</div>
+      <div>3. Diseño funcional</div>
+      <div>4. Cumplimiento de los objetivos de un SD</div>
+      <div>5. Localización de los cinco países</div>
+      <div>6. Diseño gráfico y navegación</div>
+      <div>7. Diseño físico</div>
+      <div>8. Implementación del prototipo y pruebas</div>
+      <div>9. Caso de prueba obligatorio (15 de nov., 20:30)</div>
+      <div>10. Conclusiones · Referencias</div>
+      <div>Anexos A–C (no cuentan en el límite de páginas)</div>
+    </div>
+  </div>
+  <div style="font-size:7.5pt;color:#64748B">Todos los datos personales, direcciones, teléfonos, tarifas y comercios que aparecen en este documento y en el prototipo son ficticios. Las tasas e impuestos son referencias verificadas en las fuentes citadas a noviembre de 2026 y deben revalidarse antes de operar.</div>
+</div>
+
+<!-- ============ 1. OPORTUNIDAD ============ -->
+<section class="newpage">
+<h1>1. Oportunidad de negocio y caso</h1>
+<p><b>Problemática generalizada.</b> En las grandes ciudades el conductor decide dónde parquear con información nula y en el peor momento: a metros del destino. Hasta un 30 % del tráfico en zonas comerciales corresponde a vehículos que dan vueltas buscando cupo (Shoup), un conductor pierde en promedio 17 horas al año en esa búsqueda (INRIX), más del 50 % ha cancelado un viaje por no encontrar dónde estacionar (IBM) y un vehículo pasa el 95 % de su vida parqueado (IPMI). Al mismo tiempo, parqueaderos pequeños no tienen canal digital para avisar que tienen cupos libres y miles de garajes y lotes particulares permanecen ociosos.</p>
+<p><b>Problema concreto.</b> El conductor no conoce <i>antes de salir</i> la disponibilidad, la tarifa (por minuto u hora) ni las condiciones (techado, entrega de llaves, altura máxima, carro o moto); el parqueadero con cupo libre no puede anunciarlo y el garaje del vecino no existe para el mercado.</p>
+<p><b>Caso diseñado.</b> <i>«Cupo garantizado en zonas de oficinas, clínicas y universidades»</i>: un conductor con destino recurrente (trabajo, estudio, cita médica) busca por destino, compara, reserva y paga el cupo desde la app; llega y entra con un código. Una ciudad piloto por país, dos o tres zonas densas en cada una (densidad antes que cobertura):</p>
+<table>
+<tr><th>País</th><th>Ciudad piloto</th><th>Zonas iniciales</th><th>Perfil de usuario</th><th>Justificación</th></tr>
+<tr><td class="k">Colombia</td><td>Bogotá</td><td>Calle 72 / Chapinero, Centro, clínicas del norte</td><td>Empleado de oficina y moto de alta rotación</td><td>Mercado de validación (Fase 0) y sede del equipo</td></tr>
+<tr><td class="k">Brasil</td><td>São Paulo</td><td>Av. Paulista, Faria Lima, Pinheiros</td><td>Ejecutivo y estudiante</td><td>44 % del parqueo inteligente de Latinoamérica; Pix maduro</td></tr>
+<tr><td class="k">Estados Unidos</td><td>Nueva York</td><td>Midtown, Lower Manhattan</td><td>Commuter y visitante de clínicas</td><td>Usuario entrenado en pagar parqueo por app (≈65 %)</td></tr>
+<tr><td class="k">Francia</td><td>París</td><td>La Défense, 8.º y 15.º <i>arrondissement</i></td><td>Profesional y visitante hospitalario</td><td>Alta presión de estacionamiento y regulación RGPD exigente</td></tr>
+<tr><td class="k">Japón</td><td>Tokio</td><td>Marunouchi, Shinjuku</td><td>Ejecutivo y visitante</td><td>Cultura de <i>coin parking</i>; reto CJK y orden del nombre</td></tr>
+</table>
+<p class="small">Las ciudades siguen la tabla de referencia del enunciado (sección 3), que fija el contrato de configuración para estos cinco países. Los mercados del plan de expansión previo (México, Emiratos Árabes Unidos e Indonesia) se usan en la sección 4 para demostrar que agregar un sexto país es solo configuración.</p>
+
+<h2>1.1 Análisis del negocio ya explotado</h2>
+<table>
+<tr><th>Plataforma</th><th>Clave de negocio (transacción que genera ingreso)</th><th>Subsistemas identificados</th><th>Nuestra ventaja diferencial</th></tr>
+<tr><td class="k">SpotHero (EE. UU.)</td><td>Reserva prepagada: comisión de 15–20 % al operador + tarifa fija por reserva; gratis para el conductor</td><td>Búsqueda por destino, disponibilidad en tiempo real (SpotNow, API pública), reservas, pagos, panel de operadores</td><td>Incluye espacios particulares; el parqueadero formal paga mensualidad fija y no comisión por transacción</td></tr>
+<tr><td class="k">JustPark (R. U.)</td><td>Marketplace bilateral: el conductor paga la reserva y el propietario recibe ingreso por publicar</td><td>Búsqueda, reservas (10 min a 1 mes), pagos sin efectivo, red de carga eléctrica (JustCharge), publicación de espacios</td><td>Condiciones operativas explícitas (llaves, techado, altura) y operación multinacional sin ramas de código por país</td></tr>
+</table>
+<p>Del análisis comparativo previo (incluida Parqueate, Colombia) concluimos que el reto técnico común es <b>garantizar la consistencia de la disponibilidad cuando varios conductores reservan el mismo cupo al mismo tiempo</b>; por eso la transacción T0 «Reservar cupo con pago» es el centro del diseño.</p>
+
+<h2>1.2 ¿Por qué es un sistema distribuido? Los cinco síntomas</h2>
+<table>
+<tr><th>Síntoma</th><th>Manifestación en Tu Espacio</th></tr>
+<tr><td class="k">Geografía</td><td>Conductores, parqueaderos, anfitriones y centros de datos en cinco países y cuatro continentes; cada país conserva sus datos personales en su región.</td></tr>
+<tr><td class="k">Multiproceso</td><td>Miles de búsquedas, reservas, entradas y salidas simultáneas en hora pico; varios conductores compiten por el mismo cupo.</td></tr>
+<tr><td class="k">Interconexión</td><td>Apps Android/iOS, panel web, pasarelas de pago (PSE, Pix, tarjetas, PayPay), mapas, autoridades fiscales y servicios de notificación push.</td></tr>
+<tr><td class="k">Compartición</td><td>La disponibilidad de un cupo es un estado compartido entre el conductor, el panel del dueño y la ocupación física; catálogos y perfiles regionales se comparten entre regiones.</td></tr>
+<tr><td class="k">Tolerancia a fallas</td><td>Una reserva no puede perderse ni cobrarse dos veces si cae un nodo o la pasarela no responde; la caída de un país no debe afectar a los otros cuatro.</td></tr>
+</table>
+</section>
+
+<!-- ============ 2. PROPUESTA ============ -->
+<section>
+<h1>2. Propuesta de solución</h1>
+<p><b>Definición del negocio.</b> Tu Espacio es un sistema distribuido de comercio de proximidad que publica, en tiempo real y por destino, el cupo, la tarifa y las condiciones de parqueaderos formales y espacios particulares, y permite <b>reservar y pagar el cupo antes de salir</b>. Sirve para eliminar el tráfico de búsqueda, dar demanda medible al parqueadero y monetizar espacios ociosos.</p>
+<h2>2.1 Modelo de ingresos (expresado en las cinco monedas)</h2>
+<p>El conductor no paga suscripción ni comisión: paga la tarifa del parqueadero, que la plataforma recauda y liquida. La plataforma gana por (1) <b>mensualidad</b> del parqueadero formal, (2) <b>comisión</b> sobre reservas de espacios particulares y (3) <b>destacados por zona</b> (Fase 2). Los valores son <i>hipótesis de diseño a validar en la Fase 0</i>; se fijan por paridad de poder adquisitivo, no por tasa de cambio de mercado, y siempre se cobran en moneda local.</p>
+<table>
+<tr><th>Concepto</th><th>COP (Colombia)</th><th>BRL (Brasil)</th><th>USD (EE. UU.)</th><th>EUR (Francia)</th><th>JPY (Japón)</th></tr>
+<tr><td class="k">Plan Básico / mes</td><td>$ 149.000</td><td>R$ 99,00</td><td>$49.00</td><td>39,00 €</td><td>￥5,500</td></tr>
+<tr><td class="k">Plan Destacado / mes</td><td>$ 299.000</td><td>R$ 199,00</td><td>$99.00</td><td>79,00 €</td><td>￥11,000</td></tr>
+<tr><td class="k">Comisión espacio particular</td><td colspan="5">12 % de la tarifa de cada reserva concretada (mismo porcentaje en los cinco países; descontado en la liquidación al anfitrión)</td></tr>
+<tr><td class="k">Destacado por zona (Fase 2)</td><td>$ 40.000 / semana</td><td>R$ 25,00</td><td>$15.00</td><td>12,00 €</td><td>￥1,800</td></tr>
+</table>
+<p class="small">Los reportes consolidados del administrador convierten a USD con el servicio de tasas de cambio (fuente y fecha de la tasa registradas, sección 5); los importes se guardan como enteros en la unidad menor de cada moneda.</p>
+<h2>2.2 Actores, alcance, supuestos y restricciones</h2>
+<div class="cols2">
+<div>
+<table>
+<tr><th>Actor</th><th>Qué hace</th></tr>
+<tr><td class="k">Conductor</td><td>Busca por destino, compara, reserva, paga, registra llegada y salida, califica.</td></tr>
+<tr><td class="k">Comercio (dueño de parqueadero formal)</td><td>Paga mensualidad; administra cupos, tarifas, horarios y condiciones; ve visitas y reservas.</td></tr>
+<tr><td class="k">Comercio (anfitrión particular)</td><td>Publica garaje, lote o antejardín; recibe reservas e ingresos menos comisión.</td></tr>
+<tr><td class="k">Operador de entrada / valet</td><td>Rol análogo al repartidor: es asignado por proximidad y carga a la reserva, valida el código y recibe la propina.</td></tr>
+<tr><td class="k">Administrador de plataforma</td><td>Tablero de operación, perfiles regionales, tasas e impuestos, monitoreo.</td></tr>
+</table>
+</div>
+<div>
+<p><b>Alcance:</b> cinco ciudades piloto, reserva inmediata y anticipada (≤ 2 h), carro y moto, pago en app, comprobante fiscal por país, panel de comercios y consola de administración.</p>
+<p><b>Supuestos:</b> la disponibilidad se mide «ahora» (no por franjas) en el MVP; el cupo se retiene 10 min durante el pago; cobro por hora iniciada o por minuto exacto según la tarifa; cancelación con reembolso total antes de la llegada.</p>
+<p><b>Restricciones:</b> ninguna regla por país en la lógica de negocio (todo en datos); datos personales residentes en su país; pasarelas, mapas y tasas de cambio simuladas en el prototipo con su interfaz real documentada; datos de prueba ficticios.</p>
+<p><b>Correspondencia con el caso base del enunciado:</b> comercio = parqueadero/anfitrión; producto = cupo por tiempo; carrito = horas de parqueo + servicio de valet; repartidor = operador de entrada/valet; seguimiento = estado de la reserva y llegada del conductor.</p>
+</div>
+</div>
+</section>
+
+<!-- ============ 3. DISEÑO FUNCIONAL ============ -->
+<section>
+<h1>3. Diseño funcional</h1>
+<h2>3.1 El sistema como un todo: diagrama de contexto</h2>
+<div class="fig">
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="10.5">
+ <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#1F6FD1"/></marker></defs>
+ <rect x="285" y="70" width="190" height="110" rx="16" fill="#0B2545"/>
+ <text x="380" y="105" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">TU ESPACIO</text>
+ <text x="380" y="124" fill="#BFE0FF" text-anchor="middle">Sistema distribuido</text>
+ <text x="380" y="140" fill="#BFE0FF" text-anchor="middle">5 regiones · 1 base de código</text>
+ <text x="380" y="156" fill="#BFE0FF" text-anchor="middle">CO · BR · US · FR · JP</text>
+ <g font-weight="600">
+  <rect x="10" y="12" width="175" height="36" rx="8" fill="#EEF7FF" stroke="#3FA2FF"/><text x="97" y="34" text-anchor="middle">Conductor (app móvil)</text>
+  <rect x="10" y="62" width="175" height="36" rx="8" fill="#EEF7FF" stroke="#3FA2FF"/><text x="97" y="84" text-anchor="middle">Dueño de parqueadero (panel)</text>
+  <rect x="10" y="112" width="175" height="36" rx="8" fill="#EEF7FF" stroke="#3FA2FF"/><text x="97" y="134" text-anchor="middle">Anfitrión particular (app)</text>
+  <rect x="10" y="162" width="175" height="36" rx="8" fill="#EEF7FF" stroke="#3FA2FF"/><text x="97" y="184" text-anchor="middle">Operador de entrada / valet</text>
+  <rect x="10" y="212" width="175" height="36" rx="8" fill="#EEF7FF" stroke="#3FA2FF"/><text x="97" y="234" text-anchor="middle">Administrador (consola web)</text>
+ </g>
+ <g>
+  <rect x="575" y="8" width="180" height="38" rx="8" fill="#F4F6F9" stroke="#94A3B8"/><text x="665" y="24" text-anchor="middle" font-weight="600">Pasarelas de pago</text><text x="665" y="38" text-anchor="middle" font-size="8.5">PSE/Nequi · Pix · Stripe · CB · PayPay</text>
+  <rect x="575" y="56" width="180" height="38" rx="8" fill="#F4F6F9" stroke="#94A3B8"/><text x="665" y="72" text-anchor="middle" font-weight="600">Mapas y geocodificación</text><text x="665" y="86" text-anchor="middle" font-size="8.5">API de mapas (simulada: OSM/Nominatim)</text>
+  <rect x="575" y="104" width="180" height="38" rx="8" fill="#F4F6F9" stroke="#94A3B8"/><text x="665" y="120" text-anchor="middle" font-weight="600">Autoridades fiscales</text><text x="665" y="134" text-anchor="middle" font-size="8.5">DIAN · Prefeitura SP · NYS DTF · DGFiP · NTA</text>
+  <rect x="575" y="152" width="180" height="38" rx="8" fill="#F4F6F9" stroke="#94A3B8"/><text x="665" y="168" text-anchor="middle" font-weight="600">Mensajería</text><text x="665" y="182" text-anchor="middle" font-size="8.5">FCM · APNs · SMS · correo (SMTP)</text>
+  <rect x="575" y="200" width="180" height="46" rx="8" fill="#F4F6F9" stroke="#94A3B8"/><text x="665" y="216" text-anchor="middle" font-weight="600">Tasas de cambio · NTP · DNS</text><text x="665" y="230" text-anchor="middle" font-size="8.5">BCE / Banco de la República (TRM)</text><text x="665" y="242" text-anchor="middle" font-size="8.5">pool.ntp.org · registradores ccTLD</text>
+ </g>
+ <g stroke="#1F6FD1" stroke-width="1.3" fill="none" marker-end="url(#a)">
+  <path d="M185,30 L285,85"/><path d="M185,80 L285,105"/><path d="M185,130 L285,125"/><path d="M185,180 L285,150"/><path d="M185,230 L285,170"/>
+  <path d="M475,90 L575,27"/><path d="M475,105 L575,75"/><path d="M475,125 L575,123"/><path d="M475,145 L575,171"/><path d="M475,165 L575,222"/>
+ </g>
+ <g font-size="8.3" fill="#475569">
+  <text x="200" y="47">buscar · reservar · pagar</text><text x="205" y="210">perfiles · tasas · monitoreo</text>
+  <text x="488" y="58">preautorizar / capturar</text><text x="492" y="210">tasas · hora · nombres</text>
+ </g>
+</svg>
+<div class="cap">Figura 1. Diagrama de contexto: actores (izquierda) y sistemas externos (derecha). Todos los intercambios externos usan HTTPS/TLS 1.3 salvo NTP (UDP 123) y DNS (UDP/TCP 53).</div>
+</div>
+
+<h2>3.2 Subsistemas y grafo de interconexión</h2>
+<p>Siguiendo la Teoría General de Sistemas (Bertalanffy), el sistema se descompone en subsistemas abiertos, cada uno con entradas, procesos y salidas propias, que intercambian mensajes (transacciones) y se regulan por retroalimentación (monitoreo). Cada subsistema es un servicio desplegable de forma independiente por región.</p>
+<div class="fig">
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="10">
+ <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10z" fill="#475569"/></marker></defs>
+ <g stroke="#94A3B8" stroke-width="1.2" fill="none" marker-end="url(#b)">
+  <path d="M190,55 L300,130"/>
+  <path d="M190,150 L300,150"/>
+  <path d="M470,140 L560,70"/>
+  <path d="M470,160 L560,160"/>
+  <path d="M470,175 L560,245"/>
+  <path d="M385,185 L385,240"/>
+  <path d="M640,95 L640,135"/>
+  <path d="M190,245 L300,170"/>
+  <path d="M105,75 L105,125"/>
+  <path d="M300,265 L190,265"/>
+  <path d="M645,265 L470,265" stroke-dasharray="4 3"/>
+  <path d="M105,175 L105,225"/>
+ </g>
+ <g font-size="8" fill="#1F6FD1" font-weight="600">
+  <text x="210" y="82">TA1 · TCfg</text><text x="208" y="144">TC1 (caché)</text><text x="478" y="96">T21–T23 · TX1</text>
+  <text x="482" y="153">TF1 (evento)</text><text x="480" y="222">TN1 (evento)</text><text x="392" y="218">TP1 · TG1</text>
+  <text x="648" y="120">TF1→ autoridad</text><text x="203" y="214">TL1 (textos)</text><text x="112" y="104">perfil</text>
+  <text x="205" y="279">TR1 tasas</text><text x="480" y="258">TM1 métricas (todos → S9)</text><text x="112" y="204">i18n</text>
+ </g>
+ <rect x="300" y="115" width="170" height="70" rx="12" fill="#0B2545"/>
+ <text x="385" y="140" fill="#fff" text-anchor="middle" font-weight="700">S3 Disponibilidad y Reservas</text>
+ <text x="385" y="156" fill="#BFE0FF" text-anchor="middle" font-size="8.8">Coordinador de T0 · retención</text>
+ <text x="385" y="170" fill="#BFE0FF" text-anchor="middle" font-size="8.8">llegada/salida · asignación de valet</text>
+ <g font-weight="600">
+  <rect x="20" y="30" width="170" height="45" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="105" y="50" text-anchor="middle">S1 Identidad y Perfiles</text><text x="105" y="64" text-anchor="middle" font-size="8.5" font-weight="400">Regionales (RegionProfile)</text>
+  <rect x="20" y="125" width="170" height="50" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="105" y="146" text-anchor="middle">S2 Catálogo y</text><text x="105" y="160" text-anchor="middle">Geolocalización</text>
+  <rect x="20" y="225" width="170" height="55" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="105" y="245" text-anchor="middle">S7 Localización</text><text x="105" y="259" text-anchor="middle" font-size="8.5" font-weight="400">(i18n/l10n, catálogos ICU)</text><text x="105" y="272" text-anchor="middle" font-size="8.5" font-weight="400">S10 Tasas de cambio</text>
+  <rect x="560" y="45" width="170" height="50" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="645" y="66" text-anchor="middle">S4 Pagos</text><text x="645" y="80" text-anchor="middle" font-size="8.5" font-weight="400">preautorizar · capturar · reembolsar</text>
+  <rect x="560" y="135" width="170" height="50" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="645" y="156" text-anchor="middle">S5 Facturación e</text><text x="645" y="170" text-anchor="middle">Impuestos</text>
+  <rect x="560" y="225" width="170" height="40" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="645" y="249" text-anchor="middle">S6 Notificaciones</text>
+  <rect x="300" y="240" width="170" height="45" rx="10" fill="#EEF7FF" stroke="#3FA2FF"/><text x="385" y="259" text-anchor="middle">S8 Panel y Administración</text><text x="385" y="273" text-anchor="middle" font-size="8.5" font-weight="400">comercios · consola · reportes</text>
+  <rect x="300" y="10" width="170" height="40" rx="10" fill="#FFF7ED" stroke="#F97316"/><text x="385" y="28" text-anchor="middle">S9 Monitoreo</text><text x="385" y="42" text-anchor="middle" font-size="8.5" font-weight="400">métricas · logs · alertas</text>
+  <rect x="560" y="275" width="170" height="22" rx="8" fill="#E0E7FF" stroke="#6366F1"/><text x="645" y="290" text-anchor="middle" font-size="9">Broker AMQP (pub/sub)</text>
+ </g>
+ <path d="M385,50 L385,115" stroke="#F97316" stroke-dasharray="3 3" fill="none"/>
+</svg>
+<div class="cap">Figura 2. Grafo de subsistemas. Aristas sólidas: llamadas síncronas REST/HTTPS; punteadas: eventos asíncronos por el broker. Las etiquetas son las transacciones de la tabla 3.3.</div>
+</div>
+<table>
+<tr><th>Subsistema</th><th>Funciones</th><th>Datos propios (por país)</th></tr>
+<tr><td class="k">S1 Identidad y Perfiles Regionales</td><td>Registro y autenticación de los cuatro actores (OIDC/JWT), roles, consentimiento; administración versionada de RegionProfile</td><td>Usuarios, credenciales (hash Argon2id), consentimientos, perfiles regionales</td></tr>
+<tr><td class="k">S2 Catálogo y Geolocalización</td><td>Destinos, espacios, tarifas y condiciones; búsqueda por cercanía (radio y orden por distancia/precio)</td><td>Espacios con geometría (PostGIS), tarifas en unidad menor</td></tr>
+<tr><td class="k">S3 Disponibilidad y Reservas</td><td>Coordinador de T0, retención temporal, llegada/salida, cancelación; asignación del operador de entrada por proximidad y carga</td><td>Cupos, retenciones, reservas, registro de la transacción (log del coordinador), llaves de idempotencia</td></tr>
+<tr><td class="k">S4 Pagos</td><td>Adaptador a la pasarela de cada país; preautorización, captura, anulación, reembolso; libro mayor (ledger) de comisiones</td><td>Autorizaciones, capturas, reembolsos (tokens, nunca datos de tarjeta)</td></tr>
+<tr><td class="k">S5 Facturación e Impuestos</td><td>Cálculo de impuestos según perfil; emisión del comprobante del país (factura DIAN, NFS-e, receipt, facture, 適格請求書)</td><td>Comprobantes, numeración, acuses de la autoridad</td></tr>
+<tr><td class="k">S6 Notificaciones</td><td>Push, SMS y correo en el idioma y la zona horaria del destinatario</td><td>Plantillas, tokens de dispositivo, bitácora de envíos</td></tr>
+<tr><td class="k">S7 Localización · S10 Tasas</td><td>Catálogos de mensajes ICU por idioma con respaldo; formato CLDR; tasas de cambio con fuente y fecha</td><td>Catálogos (replicados), tasas (replicadas)</td></tr>
+<tr><td class="k">S8 Panel y Administración</td><td>Panel de comercios (cupos, tarifas, horarios, métricas, ingresos) y consola (tablero, perfiles, impuestos, monitoreo)</td><td>Proyecciones de lectura (CQRS)</td></tr>
+<tr><td class="k">S9 Monitoreo</td><td>Métricas, trazas distribuidas, logs, alertas, detección de fallas (heartbeats)</td><td>Series de tiempo, logs (retención 30 días)</td></tr>
+</table>
+</section>
+
+<section>
+<h2>3.3 Procesos y transacciones atómicas</h2>
+<p>La transacción raíz <b>T0 «Reservar cupo con pago»</b> (Hito 2) se descompone en T1 = reserva del cupo (T11 verificar, T12 retener, T13 confirmar) y T2 = cobro (T21 preautorizar, T22 registrar tarifa y comisión, T23 capturar). Como la pasarela externa no participa en un 2PC real, T0 se ejecuta como <b>saga orquestada</b>: preautorizar + capturar equivale a preparar + confirmar, y cada paso tiene su compensación.</p>
+<table>
+<tr><th>Id</th><th>Emisor → Receptor</th><th>Mensaje (formato)</th><th>Protocolo</th><th>Confirmación / reversión</th><th>Si falla</th></tr>
+<tr><td class="k">TA1</td><td>App → S1</td><td><code>POST /auth/login {email,password}</code> → <code>{token,user}</code></td><td>HTTPS REST/JSON</td><td>Emite JWT (15 min) + refresh rotativo</td><td>401/403; bloqueo progresivo por intentos</td></tr>
+<tr><td class="k">TC1</td><td>App → S2</td><td><code>GET /spaces?lat&amp;lng&amp;radius&amp;vehicle&amp;sort</code></td><td>HTTPS REST</td><td>Lectura (sin estado)</td><td>Sirve caché con aviso «datos de hace n s»</td></tr>
+<tr><td class="k">T11</td><td>S3 → BD S3</td><td><code>SELECT libres FROM cupos WHERE espacio=? AND vehiculo=?</code></td><td>SQL/TLS</td><td>Solo lectura</td><td>Aborta T0 y ofrece alternativas (409)</td></tr>
+<tr><td class="k">T12</td><td>S3 → BD S3</td><td><code>UPDATE cupos SET retenidos=retenidos+1 WHERE … AND libres&gt;0</code> + retención con vencimiento 10 min</td><td>SQL/TLS</td><td>0 filas = otro ganó (409) · Compensación C12: liberar</td><td>Vence sola a los 10 min (lease)</td></tr>
+<tr><td class="k">T21</td><td>S3 → S4 → pasarela</td><td><code>POST /payments/authorize {amount_minor,currency,Idempotency-Key}</code></td><td>HTTPS REST (mTLS)</td><td>Autoriza · C21: anular autorización</td><td>Timeout 3 s, 3 reintentos con la misma llave; luego C12</td></tr>
+<tr><td class="k">T22</td><td>S3 → S4 (ledger)</td><td><code>{reserva, tarifa, comision_minor}</code></td><td>REST interno</td><td>Asiento contable · C22: asiento inverso</td><td>Reintento idempotente</td></tr>
+<tr><td class="k">T23</td><td>S4 → pasarela</td><td><code>POST /capture {auth_id}</code></td><td>HTTPS</td><td>Captura · C23: reembolso</td><td>Reintenta; si es definitiva reembolsa y cancela T13</td></tr>
+<tr><td class="k">T13</td><td>S3 → BD S3 + outbox</td><td><code>INSERT reserva; INSERT outbox(reservation.confirmed)</code> en una sola transacción local ACID</td><td>SQL</td><td>COMMIT · C13: cancelar reserva</td><td>Coordinador relee su log al reiniciar y completa o aborta</td></tr>
+<tr><td class="k">TF1</td><td>S3 ⇒ S5 → autoridad</td><td>Evento <code>reservation.confirmed</code> (JSON, CloudEvents 1.0)</td><td>AMQP 0-9-1 (topic)</td><td>ack manual tras emitir comprobante</td><td>Reintento con backoff; cola de mensajes muertos (DLQ); modo contingencia</td></tr>
+<tr><td class="k">TN1</td><td>S3 ⇒ S6 → FCM/APNs</td><td>Evento + plantilla por idioma y zona horaria</td><td>AMQP → HTTPS</td><td>Al menos una vez + deduplicación por id de evento</td><td>Reintento; canal alterno (SMS/correo)</td></tr>
+<tr><td class="k">TP1</td><td>S3 ⇒ S8</td><td>Eventos <code>occupancy.changed</code></td><td>AMQP + WebSocket al panel</td><td>Consistencia eventual</td><td>Reconstruye la proyección desde el log</td></tr>
+<tr><td class="k">TL1</td><td>App/valet → S3</td><td><code>POST /reservations/:id/check-in|check-out</code></td><td>HTTPS</td><td>Transición de estado condicional</td><td>409 si el estado no corresponde</td></tr>
+<tr><td class="k">TG1</td><td>App → S3</td><td>Posición del conductor en camino (lat, lng, t) cada 5 s</td><td>QUIC/UDP 443 (datagramas)</td><td>Último valor gana; sin reintento</td><td>Se descarta; la retención no depende de ella</td></tr>
+<tr><td class="k">TX1</td><td>App → S3 → S4</td><td><code>POST /reservations/:id/cancel</code></td><td>HTTPS</td><td>Saga: cancelar + reembolsar</td><td>Reembolso en cola hasta confirmarse</td></tr>
+<tr><td class="k">TR1 · TCfg · TM1</td><td>S10/S1 ⇒ regiones; todos → S9</td><td>Tasas y perfiles versionados; métricas</td><td>AMQP federado; HTTP scrape</td><td>Versión monotónica (gana la mayor)</td><td>Se usa la última versión válida</td></tr>
+</table>
+<div class="fig">
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="9.2">
+ <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#0B2545"/></marker>
+ <marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#B45309"/></marker></defs>
+ <g font-weight="700" fill="#fff" text-anchor="middle">
+  <rect x="5" y="5" width="80" height="22" rx="5" fill="#0B2545"/><text x="45" y="20">App</text>
+  <rect x="100" y="5" width="90" height="22" rx="5" fill="#0B2545"/><text x="145" y="20">API Gateway</text>
+  <rect x="210" y="5" width="120" height="22" rx="5" fill="#0B2545"/><text x="270" y="20">S3 Reservas (coord.)</text>
+  <rect x="350" y="5" width="85" height="22" rx="5" fill="#0B2545"/><text x="392" y="20">BD S3</text>
+  <rect x="455" y="5" width="85" height="22" rx="5" fill="#0B2545"/><text x="497" y="20">S4 Pagos</text>
+  <rect x="560" y="5" width="85" height="22" rx="5" fill="#0B2545"/><text x="602" y="20">Pasarela</text>
+  <rect x="665" y="5" width="90" height="22" rx="5" fill="#6366F1"/><text x="710" y="20">Broker → S5,S6,S8</text>
+ </g>
+ <g stroke="#CBD3DE" stroke-dasharray="3 3"><path d="M45,27V280M145,27V280M270,27V280M392,27V280M497,27V280M602,27V280M710,27V280"/></g>
+ <g stroke="#0B2545" stroke-width="1.2" marker-end="url(#c)" fill="none">
+  <path d="M45,45H143"/><path d="M145,58H268"/><path d="M270,78H390"/><path d="M270,100H390"/><path d="M270,125H495"/><path d="M497,140H600"/>
+  <path d="M600,155H499" /><path d="M497,168H272"/><path d="M270,185H495"/><path d="M497,200H600"/><path d="M270,220H390"/><path d="M392,238H708"/><path d="M270,256H47"/>
+ </g>
+ <g fill="#0F1B2D">
+  <text x="50" y="41">POST /reservations</text><text x="150" y="54">+ Idempotency-Key, JWT</text>
+  <text x="275" y="74">T11 verificar cupo libre</text><text x="275" y="96">T12 UPDATE … WHERE libres&gt;0 (retención 10 min)</text>
+  <text x="275" y="121">T21 preautorizar (timeout 3 s, 3 reintentos)</text><text x="502" y="136">authorize</text><text x="520" y="152">auth_id</text>
+  <text x="285" y="164">ok · T22 asiento tarifa/comisión</text><text x="275" y="181">T23 capturar</text><text x="502" y="196">capture</text>
+  <text x="275" y="216">T13 COMMIT reserva + outbox</text><text x="400" y="234">relay publica reservation.confirmed (TF1, TN1, TP1 asíncronas)</text>
+  <text x="55" y="252">201 Created {code, receipt}</text>
+ </g>
+ <rect x="5" y="262" width="750" height="34" rx="4" fill="#FFF7ED" stroke="#F97316"/>
+ <text x="12" y="276" fill="#B45309" font-size="8.8">Compensaciones (en orden inverso): pago rechazado → C12 liberar cupo · pasarela sin respuesta → reintentos con la misma llave y luego C12</text>
+ <text x="12" y="290" fill="#B45309" font-size="8.8">falla definitiva en T23 → C21/C23 reembolso + C13 cancelar · caída del coordinador → al reiniciar relee su log y completa o aborta</text>
+</svg>
+<div class="cap">Figura 3. Secuencia de T0 «Reservar cupo con pago» con sus compensaciones. Las notificaciones, la facturación y el panel quedan fuera de T0 (asíncronas, patrón outbox).</div>
+</div>
+</section>
+
+<section>
+<h2>3.4 Tecnologías de comunicación</h2>
+<table>
+<tr><th>Tecnología</th><th>Dónde se usa</th><th>Justificación frente a las alternativas vistas en clase</th></tr>
+<tr><td class="k">Servicios web REST/JSON sobre HTTPS</td><td>App ↔ API Gateway; llamadas síncronas S3→S4, S3→S1</td><td>Estándar abierto, independiente de lenguaje y SO; contrato ya definido en <code>docs/API.md</code>. Se prefirió a RPC binario (gRPC/RMI) porque los clientes móviles y web lo consumen sin generar stubs, y a SOAP por su peso.</td></tr>
+<tr><td class="k">Colas de mensajes (AMQP 0-9-1)</td><td>Comandos que no pueden perderse: emitir comprobante, reembolso pendiente</td><td>Entrega garantizada con confirmación (ack) y persistencia; desacopla en el tiempo al emisor del receptor (si S5 cae, la cola guarda el trabajo). Un socket directo no sobrevive a la caída del receptor.</td></tr>
+<tr><td class="k">Publicación-suscripción (exchange <i>topic</i>)</td><td>Eventos de dominio: <code>reservation.*</code>, <code>occupancy.*</code>, <code>space.updated</code>, <code>region.profile.updated</code></td><td>Un evento alimenta a varios consumidores (facturación, notificaciones, panel, analítica) sin que el emisor los conozca: bajo acoplamiento y escalabilidad.</td></tr>
+<tr><td class="k">WebSocket (sobre TLS)</td><td>Ocupación en vivo del panel y estado de la reserva en la app</td><td>Canal bidireccional persistente; evita sondeo (polling) y reduce latencia.</td></tr>
+<tr><td class="k">Sockets UDP vía QUIC</td><td>Posición del conductor en camino (TG1)</td><td>Datos frecuentes y efímeros: perder un paquete es aceptable y la retransmisión de TCP solo añade retardo.</td></tr>
+<tr><td class="k">RPC (gRPC) — descartado por ahora</td><td>—</td><td>Mejor rendimiento binario, pero exige stubs por lenguaje; se reserva para tráfico interno masivo futuro.</td></tr>
+</table>
+
+<h2>3.5 Middleware</h2>
+<p>Se selecciona <b>RabbitMQ</b> (broker AMQP 0-9-1, de código abierto) como middleware orientado a mensajes, complementado por un <b>API Gateway</b> (REST) como punto único de entrada por región. En la tarea de middleware se compararon CORBA, Java RMI, Apache Kafka y RabbitMQ: CORBA y RMI acoplan a un modelo de objetos (RMI, además, a Java); Kafka es superior para registros de eventos de altísimo volumen pero añade operación compleja innecesaria para el volumen piloto. RabbitMQ ofrece colas <i>quorum</i> replicadas (Raft), confirmaciones de publicador, colas de mensajes muertos y <b>federación</b> entre regiones para replicar perfiles y tasas.</p>
+<p><b>Heterogeneidad que resuelve:</b> <i>lenguaje</i> (servicios en Node.js, consumidores posibles en Java o Python con clientes AMQP oficiales); <i>sistema operativo y hardware</i> (contenedores Linux x86-64/ARM en la nube, clientes Android/iOS ARM, oficinas Windows); <i>representación de datos</i> (JSON UTF-8, fechas ISO 8601 en UTC, importes enteros con código ISO 4217, teléfonos E.164, sobre CloudEvents); <i>configuración regional</i> (el mensaje lleva <code>region</code> y <code>locale</code>, y cada consumidor formatea con el RegionProfile, nunca con reglas en código).</p>
+
+<h2>3.6 Sincronización y coordinación</h2>
+<ul>
+<li><b>Tiempo físico:</b> todos los nodos sincronizan con NTP (chrony) contra servidores internos estrato 2 de su región, alimentados por fuentes estrato 1 nacionales (sección 7.4). Los instantes se guardan en UTC; la deriva tolerada es &lt; 50 ms y se alerta si la supera. El vencimiento de la retención (10 min) se calcula en el reloj de la base de datos, no en el del cliente.</li>
+<li><b>Tiempo lógico:</b> cada evento lleva un reloj de Lamport por agregado (número de versión de la reserva o del espacio) para ordenar causalmente y descartar actualizaciones obsoletas (<i>last-writer-wins</i> por versión, no por hora de pared).</li>
+<li><b>Exclusión mutua «un solo conductor por cupo»:</b> actualización condicional atómica (T12) sobre la fila del cupo en la base de datos del país, equivalente a un algoritmo centralizado por recurso pero sin cuello de botella global (un coordinador por espacio y país). La retención funciona como <i>lease</i>: si el poseedor cae, vence sola. La asignación del operador de entrada usa el mismo mecanismo (un operador por reserva).</li>
+<li><b>Elección de líder:</b> la base de datos de cada región usa Patroni sobre etcd (Raft) para elegir la primaria; el broker usa colas quorum (Raft). Los trabajos programados (expirar retenciones, conciliar pagos) corren solo en el líder elegido mediante un lease en etcd.</li>
+<li><b>Interbloqueos:</b> se previenen con orden total de adquisición de recursos (siempre cupo → pago, nunca al revés), transacciones locales cortas, tiempos de espera en todo bloqueo (<code>lock_timeout</code> 2 s) y ausencia de bloqueos distribuidos que crucen países.</li>
+</ul>
+
+<h2>3.7 Datos: partición, replicación, coherencia y caché</h2>
+<table>
+<tr><th>Dato</th><th>Partición</th><th>Replicación</th><th>Coherencia</th><th>Caché</th></tr>
+<tr><td class="k">Usuarios, reservas, pagos, comprobantes</td><td>Por país (la región dueña; el id lleva el prefijo del país)</td><td>Primaria + réplica síncrona en otra zona de disponibilidad + réplica asíncrona de lectura</td><td><b>Fuerte</b> (no puede haber dos reservas del mismo cupo ni doble cobro)</td><td>No</td></tr>
+<tr><td class="k">Catálogo y disponibilidad para búsqueda</td><td>Por país y zona</td><td>Réplicas de lectura</td><td><b>Eventual</b> (segundos); la verdad se verifica en T11/T12</td><td>Redis por región, TTL 30 s, invalidación por evento <code>space.updated</code></td></tr>
+<tr><td class="k">RegionProfile, catálogos i18n, tasas de cambio</td><td>Global</td><td>Copia completa en las 5 regiones (federación AMQP)</td><td>Eventual con versión monotónica</td><td>En memoria del servicio + CDN</td></tr>
+<tr><td class="k">Métricas, calificaciones, reportes consolidados</td><td>Por país; agregados globales</td><td>Agregación asíncrona hacia el reporte del administrador</td><td>Eventual</td><td>Vistas materializadas</td></tr>
+</table>
+<p>Ningún nodo tiene el estado global: el reporte consolidado se arma con instantáneas agregadas (no datos personales) que cada región publica. Imágenes y recursos estáticos se sirven desde CDN.</p>
+
+<h2>3.8 Servicio de nombres</h2>
+<p>Tres niveles: (1) <b>DNS público</b> por país con resolución geográfica (sección 7.3); (2) <b>descubrimiento interno</b> con DNS de Kubernetes/CoreDNS bajo la zona privada <code>svc.tuespacio.internal</code>, con el esquema <code>&lt;servicio&gt;.&lt;país&gt;.svc.tuespacio.internal</code> (p. ej. <code>reservas.co.svc.tuespacio.internal</code>) y registros SRV para el broker (<code>_amqps._tcp.broker.br…</code>); (3) <b>identificadores de entidades</b> globalmente únicos sin contador central: ULID con prefijo de país y tipo (<code>co_res_01JD8…</code>, <code>jp_spc_01JD9…</code>), que permiten enrutar una petición a la región dueña solo con leer el prefijo (transparencia de ubicación).</p>
+</section>
+
+<!-- ============ 4. OBJETIVOS SD ============ -->
+<section>
+<h1>4. Cumplimiento de los objetivos de un sistema distribuido</h1>
+<h2>4.1 Transparencia (7 de 8 perfiles)</h2>
+<table>
+<tr><th>Perfil</th><th>Dónde se manifiesta</th></tr>
+<tr><td class="k">Acceso</td><td>La app invoca <code>api.reservations.create()</code> igual si el servicio está en memoria (modo <i>mock</i>) o remoto (modo <i>http</i>): la capa <code>transport.js</code> del prototipo oculta la diferencia.</td></tr>
+<tr><td class="k">Ubicación (posición)</td><td>Los servicios se llaman por nombre DNS, nunca por IP; el prefijo del id resuelve la región dueña.</td></tr>
+<tr><td class="k">Migración</td><td>Kubernetes reprograma contenedores a otro nodo y cambia su IP; el descubrimiento de servicios lo oculta.</td></tr>
+<tr><td class="k">Replicación</td><td>Lecturas de catálogo atendidas por réplicas detrás de un único endpoint; el cliente no sabe cuál responde.</td></tr>
+<tr><td class="k">Concurrencia</td><td>Dos conductores reservan a la vez: la actualización condicional serializa y el perdedor recibe alternativas, sin ver bloqueos.</td></tr>
+<tr><td class="k">Fallas</td><td>Reintentos idempotentes ante la pasarela y conmutación de la base primaria: el usuario solo ve «procesando».</td></tr>
+<tr><td class="k">Crecimiento (escalado)</td><td>Autoescalado horizontal de servicios sin estado y nuevas regiones sin cambiar clientes.</td></tr>
+</table>
+<p><b>Cuándo no conviene ser transparente:</b> la <i>moneda y el impuesto</i> se muestran explícitamente en moneda local con su desglose; la <i>zona horaria</i> de la reserva se muestra cuando el usuario está en otro huso; si el cupo fue tomado o el pago rechazado, se informa con claridad que <i>no hubo cobro</i>; ante la caída de un país, la app pasa a modo solo lectura y lo dice (ocultarlo generaría reservas que no se pueden cumplir).</p>
+
+<h2>4.2 Fiabilidad y manejo de fallas</h2>
+<p>Sin componentes críticos únicos: cada región tiene dos o más zonas de disponibilidad, balanceador redundante, base de datos primaria con réplica síncrona (RPO = 0 dentro del país, conmutación automática &lt; 30 s) y broker de tres nodos. <b>Si cae el nodo de un país</b>, los otros cuatro siguen operando sin impacto (aislamiento de fallas: no hay dependencias síncronas entre países). Si cae la región completa: el DNS retira sus registros (chequeo de salud), la app muestra el catálogo en caché en modo solo lectura y rechaza nuevas reservas con un mensaje claro; las transacciones en curso se resuelven al volver leyendo el log del coordinador; la recuperación usa la réplica cifrada de respaldo en la región de contingencia autorizada por la ley local (RPO ≤ 5 min, RTO ≤ 30 min).</p>
+<p><b>Mecanismos:</b> detección (heartbeats, sondas <i>liveness/readiness</i>, tiempos de espera), enmascaramiento (réplicas, reintentos), retransmisión (ack de AMQP, confirmaciones del publicador, consumidores idempotentes), tiempos de espera (3 s pasarela, 10 min retención, 2 s bloqueos), redundancia (N+1) y <b>ACID</b> en T0: atomicidad por saga con compensaciones, consistencia (un cupo nunca tiene dos reservas confirmadas), aislamiento por actualización condicional y durabilidad por log del coordinador + llave de idempotencia.</p>
+
+<h2>4.3 Rendimiento y escalabilidad</h2>
+<p>Cada usuario es atendido por la región de su país, por lo que la latencia no es peor que la de un sistema centralizado: un sistema único en EE. UU. sumaría ≈ 180–250 ms de ida y vuelta para Tokio o São Paulo. Objetivos: búsqueda p95 &lt; 300 ms (caché Redis), T0 p95 &lt; 2,5 s (dominada por la pasarela). Escalabilidad sin cuellos de botella: no hay tablas centrales (partición por país y zona), ningún nodo conoce el estado global, no hay reloj global (UTC por NTP + relojes lógicos), los servicios son sin estado y escalan horizontalmente, y el broker se particiona por región.</p>
+
+<h2>4.4 Flexibilidad y apertura: un sexto país solo con configuración</h2>
+<p>Interfaces públicas documentadas (OpenAPI a partir de <code>docs/API.md</code>, CloudEvents, AMQP, OIDC). Para abrir <b>México</b> (primer mercado del plan de expansión) no se toca código: (1) insertar el RegionProfile <code>MX</code>; (2) agregar el catálogo <code>es-MX</code>, que hereda de <code>es</code>; (3) registrar <code>tuespacio.mx</code>; (4) desplegar el mismo chart de Helm con <code>country=mx</code> en la subred <code>10.60.0.0/16</code>.</p>
+<pre>{ "country":"MX", "locale":"es-MX", "currency":{"code":"MXN","exponent":2,"displayDecimals":2},
+  "timeZones":["America/Mexico_City"], "tax":{"name":"IVA","rate":0.16,"included":true},
+  "receipt":"CFDI 4.0", "fiscalId":"RFC", "payments":["card","spei","oxxo"], "tip":{"mode":"optional"},
+  "phone":{"prefix":"+52","pattern":"^\\d{10}$"}, "postal":{"pattern":"^\\d{5}$"}, "dataLaw":"LFPDPPP" }</pre>
+<p class="small">Emiratos Árabes Unidos (árabe, escritura de derecha a izquierda) se habilita igual: el perfil declara <code>"direction":"rtl"</code> y la interfaz usa propiedades lógicas (<i>start/end</i>) en lugar de izquierda/derecha.</p>
+
+<h2>4.5 Seguridad</h2>
+<table>
+<tr><th>Amenaza / requisito</th><th>Control</th></tr>
+<tr><td class="k">Autenticación</td><td>OAuth 2.0 / OIDC; JWT firmado (ES256) de 15 min con refresh rotativo; MFA obligatorio para dueños y administradores; contraseñas con Argon2id.</td></tr>
+<tr><td class="k">Control de acceso por rol</td><td>RBAC: conductor, dueño, anfitrión, operador, admin regional, admin global; un admin regional solo ve datos de su país.</td></tr>
+<tr><td class="k">Cifrado en tránsito</td><td>TLS 1.3 hacia clientes; mTLS entre servicios (PKI interna); IPsec entre regiones.</td></tr>
+<tr><td class="k">Datos sensibles</td><td>AES-256 en reposo con llaves de KMS por país; los datos de tarjeta nunca tocan el sistema (tokenización de la pasarela, PCI-DSS SAQ-A); documentos de identidad cifrados a nivel de campo.</td></tr>
+<tr><td class="k">Denegación de servicio</td><td>CDN/anycast con mitigación DDoS, WAF, limitación de tasa por usuario e IP en el gateway, colas que absorben picos.</td></tr>
+<tr><td class="k">Suplantación</td><td>Firma de tokens, atestación del dispositivo (Play Integrity / App Attest), DNSSEC, SPF/DKIM/DMARC en el correo, verificación de identidad de anfitriones.</td></tr>
+</table>
+</section>
+
+<!-- ============ 5. LOCALIZACIÓN ============ -->
+<section>
+<h1>5. Localización de los cinco países</h1>
+<p>Las tablas de la sección 3 del enunciado son el <b>contrato de configuración</b>: cada fila es un atributo del objeto <code>RegionProfile</code> almacenado como dato (Anexo A) y leído por un único motor de cálculo y formato. Valores verificados en CLDR/Unicode, base IANA de zonas horarias y las fuentes fiscales citadas.</p>
+<table>
+<tr><th>Atributo del RegionProfile</th><th>CO · Bogotá</th><th>BR · São Paulo</th><th>US · Nueva York</th><th>FR · París</th><th>JP · Tokio</th></tr>
+<tr><td class="k">locale / idioma</td><td>es-CO</td><td>pt-BR</td><td>en-US</td><td>fr-FR</td><td>ja-JP</td></tr>
+<tr><td class="k">Moneda · exponente ISO / decimales visibles</td><td>COP · 2 / 0</td><td>BRL · 2 / 2</td><td>USD · 2 / 2</td><td>EUR · 2 / 2</td><td>JPY · 0 / 0</td></tr>
+<tr><td class="k">Ejemplo de precio (CLDR)</td><td>$ 25.900</td><td>R$ 25,90</td><td>$25.90</td><td>25,90 €</td><td>￥2,590</td></tr>
+<tr><td class="k">Miles / decimal · posición del símbolo</td><td>. / , · antes</td><td>. / , · antes</td><td>, / . · antes</td><td>U+202F / , · después</td><td>, / — · antes</td></tr>
+<tr><td class="k">Fecha · reloj</td><td>dd/mm/aaaa · 12 h (p. m.)</td><td>dd/mm/aaaa · 24 h</td><td>mm/dd/aaaa · 12 h (PM)</td><td>dd/mm/aaaa · 24 h</td><td>aaaa/mm/dd · 24 h</td></tr>
+<tr><td class="k">Zona IANA · horario de verano</td><td>America/Bogota (UTC−5) · no</td><td>America/Sao_Paulo (UTC−3) · no (desde 2019)</td><td>America/New_York (UTC−5/−4) · sí</td><td>Europe/Paris (UTC+1/+2) · sí</td><td>Asia/Tokyo (UTC+9) · no</td></tr>
+<tr><td class="k">Primer día · unidades</td><td>domingo · métrico</td><td>domingo · métrico</td><td>domingo · imperial (millas, pies)</td><td>lunes · métrico</td><td>domingo · métrico</td></tr>
+<tr><td class="k">Teléfono (E.164) · móvil</td><td>+57 · 3XX XXX XXXX</td><td>+55 · (DD) 9XXXX-XXXX</td><td>+1 · (XXX) XXX-XXXX</td><td>+33 · 0X XX XX XX XX</td><td>+81 · 0X0-XXXX-XXXX</td></tr>
+<tr><td class="k">Código postal (regex)</td><td><code>^\d{6}$</code></td><td><code>^\d{5}-\d{3}$</code></td><td><code>^\d{5}(-\d{4})?$</code></td><td><code>^\d{5}$</code></td><td><code>^\d{3}-\d{4}$</code></td></tr>
+<tr><td class="k">Dirección · nombre</td><td>Vía + n.º, barrio, ciudad · nombres + apellidos</td><td>Rua, n.º, compl., bairro, cidade-UF, CEP · nome + sobrenome</td><td>N.º + calle, apto, ciudad, estado, ZIP · first + last</td><td>N.º + rue, CP, ville · prénom + nom</td><td>〒, prefectura, ciudad, chōme-ban-gō · <b>apellido + nombre</b></td></tr>
+<tr><td class="k">Impuesto sobre parqueo</td><td>IVA 19 % incluido (DIAN, Oficio 7244/2017)</td><td>ISS municipal 5 % incluido (Lei 13.701/2003, subitem 11.01)</td><td>18,375 % añadido al final (Manhattan: 10,375 % + 8 %)</td><td>TVA 20 % incluida (tasa normal)</td><td>消費税 10 % incluido</td></tr>
+<tr><td class="k">Comprobante · id fiscal</td><td>Factura electrónica DIAN (CUFE) · NIT/CC</td><td>NFS-e · CNPJ/CPF</td><td>Receipt · EIN</td><td>Facture / ticket · SIRET</td><td>適格請求書 (登録番号 T…) · 法人番号</td></tr>
+<tr><td class="k">Medios de pago</td><td>PSE, Nequi, tarjeta</td><td>Pix, cartão</td><td>Tarjeta, Apple Pay, Google Pay</td><td>Carte Bancaire, Apple Pay (SEPA en mensualidades)</td><td>Tarjeta, PayPay (konbini en mensualidades)</td></tr>
+<tr><td class="k">Propina (<code>tip.mode</code>)</td><td>optional (sugiere 10 %, no preseleccionada)</td><td>optional (montos fijos)</td><td>suggested (15/18/20 %, preseleccionada)</td><td>hidden (servicio incluido; «ajouter» plegado)</td><td>none (no se muestra)</td></tr>
+<tr><td class="k">Plurales CLDR · fuentes</td><td>es (one/other)</td><td>pt (one/many/other)</td><td>en (one/other)</td><td>fr (0 y 1 = singular)</td><td>ja (other) · Noto Sans JP</td></tr>
+<tr><td class="k">Ley de datos · residencia</td><td>Ley 1581/2012 · Bogotá; respaldo en región de país «adecuado» SIC</td><td>LGPD · São Paulo</td><td>Leyes estatales (NY SHIELD; CCPA si aplica) · us-east</td><td>RGPD · París; respaldo dentro de la UE</td><td>APPI · Tokio; respaldo en Osaka</td></tr>
+</table>
+<h2>5.1 Reglas de internacionalización aplicadas (sección 4.1 del enunciado)</h2>
+<ol>
+<li><b>UTF-8 en toda la cadena:</b> app, JSON entre procesos, AMQP (<code>content_encoding=utf-8</code>), PostgreSQL con <code>ENCODING 'UTF8'</code> y colación ICU por locale (<code>und-u-ks-level2</code> para búsquedas sin tildes; <i>ñ</i>, <i>ç</i>, <i>œ</i> y kanji verificados).</li>
+<li><b>Textos fuera del código:</b> catálogos ICU MessageFormat por idioma con claves estables (<code>reservation.status.confirmed</code>) y cadena de respaldo <code>es-CO → es → en</code>. El prototipo ya separa textos en <code>src/i18n.js</code> con 7 idiomas para navegación, perfil y configuración.</li>
+<li><b>Formato con CLDR:</b> <code>Intl.NumberFormat</code> y <code>Intl.DateTimeFormat</code> (ICU completo en el servidor); nunca se concatenan símbolos a mano.</li>
+<li><b>Dinero:</b> enteros en la unidad menor según el exponente ISO 4217 (<code>amount_minor</code> + <code>currency</code>); nunca <i>float</i>. COP tiene exponente 2 pero se muestra y redondea a 0 decimales (<code>displayDecimals</code>); JPY tiene exponente 0. El redondeo de impuestos es «mitad hacia arriba» en la unidad de presentación.</li>
+<li><b>Tiempo:</b> instantes en UTC (<code>timestamptz</code>) y presentación con la zona IANA del usuario, que aplica el horario de verano automáticamente; nodos sincronizados por NTP.</li>
+<li><b>Conversión de monedas:</b> S10 consulta diariamente la tasa (BCE y TRM del Banco de la República) y guarda <code>{par, tasa, fuente, fecha}</code>; solo se usa en reportes consolidados; al cliente siempre se le cobra en moneda local.</li>
+<li><b>Direcciones, teléfonos y nombres:</b> formularios generados desde el perfil (orden de campos, regex, E.164 con libphonenumber); en Japón se capturan apellido y nombre en ese orden, más furigana opcional.</li>
+<li><b>Tipografía:</b> pila de fuentes con cobertura CJK (Noto Sans JP); botones y etiquetas con ancho flexible porque francés y portugués son 15–30 % más largos que el inglés.</li>
+<li><b>Impuestos, comprobante y propina:</b> configurables por país (tabla anterior); el motor solo lee <code>tax.rate</code>, <code>tax.included</code> y <code>tip.mode</code>.</li>
+<li><b>Cumplimiento legal:</b> los datos personales residen en la región de su país; consentimiento explícito y granular en el registro; derecho de supresión mediante <code>DELETE /me</code> (anonimiza reservas que la ley fiscal obliga a conservar); las transferencias internacionales solo llevan agregados anónimos o se rigen por cláusulas contractuales tipo.</li>
+</ol>
+</section>
+
+<!-- ============ 6. DISEÑO GRÁFICO ============ -->
+<section>
+<h1>6. Diseño gráfico y navegación</h1>
+<div class="cols2">
+<div>
+<p><b>Identidad:</b> azul marino de marca <span class="swatch" style="background:#0B2545"></span><code>#0B2545</code> y acento celeste <span class="swatch" style="background:#3FA2FF"></span><code>#3FA2FF</code>; estados con color <i>y</i> texto: disponible <span class="swatch" style="background:#047857"></span>, pocos cupos <span class="swatch" style="background:#B45309"></span>, lleno <span class="swatch" style="background:#DC2626"></span>, neutro <span class="swatch" style="background:#5B6676"></span>. Modo claro y oscuro (en oscuro la acción principal pasa al celeste para mantener contraste ≥ 4,5:1).</p>
+<p><b>Diagramación:</b> tarjetas blancas de radio 24 px con borde fino, botones de 16 px, filtros en píldora, barra inferior por rol, objetivos táctiles ≥ 44 px. <b>Tipografía:</b> fuente del sistema (Roboto / SF Pro) en pesos altos para títulos, con respaldo Noto Sans JP. <b>Íconos:</b> Ionicons y Material Community Icons (carro, moto, techado, llave); el símbolo «P» es universal por la Convención de Viena sobre señalización vial.</p>
+</div>
+<div>
+<p><b>Apps por actor:</b> <i>Conductor</i>: Inicio (mapa por destino + lista), Reservas, Perfil. <i>Dueño</i>: Resumen (ocupación en vivo y métricas), Reservas, Mi parqueadero, Perfil. <i>Anfitrión</i>: Mis espacios, Reservas, Ingresos, Perfil. <i>Consola de administración</i> (web): Tablero de operación por país, Perfiles regionales, Tasas e impuestos, Monitoreo.</p>
+<p><b>Consideraciones culturales:</b> el azul es neutro y asociado a confianza en los cinco países; el rojo solo para «lleno» y errores, siempre acompañado de texto (en Japón el rojo también marca precios y ofertas, por eso no se usa para tarifas); se evita el ícono de mano «OK» (ofensivo en Brasil) y se usa una marca de verificación; en reportes multimoneda se usa el código ISO (COP, USD) porque «$» es ambiguo entre Colombia y EE. UU.; en Japón no se sugiere propina y la tarjeta de confirmación usa un tono más formal (です/ます).</p>
+</div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 760 175" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="9">
+ <defs><marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10z" fill="#1F6FD1"/></marker></defs>
+ <g fill="#EEF7FF" stroke="#3FA2FF"><rect x="5" y="70" width="70" height="30" rx="7"/><rect x="95" y="70" width="80" height="30" rx="7"/></g>
+ <text x="40" y="89" text-anchor="middle">Bienvenida</text><text x="135" y="84" text-anchor="middle">Login /</text><text x="135" y="95" text-anchor="middle">Registro</text>
+ <g fill="#0B2545"><rect x="200" y="10" width="78" height="30" rx="7"/><rect x="292" y="10" width="70" height="30" rx="7"/><rect x="376" y="10" width="80" height="30" rx="7"/><rect x="470" y="10" width="82" height="30" rx="7"/><rect x="566" y="10" width="82" height="30" rx="7"/><rect x="662" y="10" width="92" height="30" rx="7"/></g>
+ <g fill="#fff" text-anchor="middle"><text x="239" y="23">Inicio: mapa</text><text x="239" y="34">por destino</text><text x="327" y="29">Detalle</text><text x="416" y="23">Resumen</text><text x="416" y="34">(carrito)</text><text x="511" y="23">Procesando</text><text x="511" y="34">T0</text><text x="607" y="23">Código +</text><text x="607" y="34">comprobante</text><text x="708" y="23">Llegada →</text><text x="708" y="34">salida → calificar</text></g>
+ <g fill="#F4F6F9" stroke="#94A3B8"><rect x="200" y="55" width="150" height="24" rx="6"/><rect x="200" y="88" width="150" height="24" rx="6"/><rect x="200" y="121" width="150" height="24" rx="6"/><rect x="200" y="148" width="150" height="24" rx="6"/></g>
+ <text x="275" y="71" text-anchor="middle">Conductor: Reservas · Perfil</text><text x="275" y="104" text-anchor="middle">Dueño: Resumen · Reservas · Mi parqueadero</text><text x="275" y="137" text-anchor="middle">Anfitrión: Espacios · Reservas · Ingresos</text><text x="275" y="164" text-anchor="middle">Admin: Tablero · Perfiles · Impuestos · Monitoreo</text>
+ <g fill="#FEE2E2" stroke="#DC2626"><rect x="470" y="60" width="180" height="40" rx="7"/></g>
+ <text x="560" y="76" text-anchor="middle" fill="#B91C1C">Errores: cupo tomado → alternativas ·</text><text x="560" y="89" text-anchor="middle" fill="#B91C1C">pago rechazado / pasarela sin respuesta</text>
+ <g fill="#F4F6F9" stroke="#94A3B8"><rect x="370" y="121" width="170" height="24" rx="6"/></g><text x="455" y="137" text-anchor="middle">Perfil → Configuración (idioma, tema)</text>
+ <g stroke="#1F6FD1" fill="none" marker-end="url(#e)" stroke-width="1.1"><path d="M75,85H93"/><path d="M175,80L198,30"/><path d="M175,88L198,67"/><path d="M175,92L198,100"/><path d="M175,96L198,133"/><path d="M278,25H290"/><path d="M362,25H374"/><path d="M456,25H468"/><path d="M552,25H564"/><path d="M648,25H660"/><path d="M511,40V58"/><path d="M350,133H368"/></g>
+</svg>
+<div class="cap">Figura 4. Mapa de pantallas y flujo de la reserva (equivalente al flujo del pedido). En marino, el flujo principal del conductor.</div>
+</div>
+<h2>6.1 Maquetas del mismo flujo en los cinco idiomas (resumen y comprobante)</h2>
+<p class="small">Pedido lógico del caso de prueba: 2 h de parqueo + servicio de valet + propina, 20:30 hora local del 15 de noviembre de 2026. Cifras calculadas con el motor de formato CLDR (Intl) a partir del RegionProfile.</p>
+<div class="phones">
+ <div class="phone"><div class="bar">Resumen de la reserva <span class="flag">CO</span></div>
+  <div class="row"><span>Parqueo 2 h × $ 7.500</span><span>$ 15.000</span></div><div class="row"><span>Servicio de valet</span><span>$ 5.000</span></div>
+  <div class="row"><span>Subtotal (IVA 19 % incl.)</span><span>$ 20.000</span></div>
+  <div class="lbl">Propina voluntaria</div><div class="chips"><span>No</span><span class="on">10 %</span><span>Otra</span></div>
+  <div class="row tot"><span>Total</span><span>$ 22.000</span></div>
+  <div class="lbl">Pagar con</div><div class="chips"><span class="on">PSE</span><span>Nequi</span><span>Tarjeta</span></div>
+  <div class="btn">Reservar y pagar</div>
+  <div class="tick"><b>FACTURA ELECTRÓNICA DE VENTA</b><br>N.º TE-000231 · CUFE 5f3a…<br>15/11/2026, 8:30 p. m. (COT)<br>Cra. 9 # 72-15, Chapinero, Bogotá<br>Laura Gómez · 310 555 0123<br>Base $ 16.807 · IVA $ 3.193</div></div>
+ <div class="phone"><div class="bar">Resumo da reserva <span class="flag">BR</span></div>
+  <div class="row"><span>Estacionamento 2 h × R$ 14,00</span><span>R$ 28,00</span></div><div class="row"><span>Manobrista</span><span>R$ 10,00</span></div>
+  <div class="row"><span>Subtotal (ISS 5 % incl.)</span><span>R$ 38,00</span></div>
+  <div class="lbl">Gorjeta opcional</div><div class="chips"><span>Sem</span><span>R$ 2</span><span class="on">R$ 3</span><span>R$ 5</span></div>
+  <div class="row tot"><span>Total</span><span>R$ 41,00</span></div>
+  <div class="lbl">Pagar com</div><div class="chips"><span class="on">Pix</span><span>Cartão</span></div>
+  <div class="btn">Reservar e pagar</div>
+  <div class="tick"><b>NFS-e · NOTA FISCAL DE SERVIÇO</b><br>N.º 000231 · CNPJ 00.000.000/0001-00<br>15/11/2026 20:30 (BRT)<br>Rua Augusta, 1500, ap. 12, Consolação, São Paulo – SP, 01304-001<br>Ana Souza · (11) 95555-0123<br>Base R$ 36,19 · ISS R$ 1,81</div></div>
+ <div class="phone"><div class="bar">Booking summary <span class="flag">US</span></div>
+  <div class="row"><span>Parking 2 h × $20.00</span><span>$40.00</span></div><div class="row"><span>Valet service</span><span>$10.00</span></div>
+  <div class="row"><span>Subtotal</span><span>$50.00</span></div><div class="row"><span>Parking tax 18.375%</span><span>$9.19</span></div>
+  <div class="lbl">Add a tip</div><div class="chips"><span>15%</span><span class="on">18%</span><span>20%</span><span>Custom</span></div>
+  <div class="row tot"><span>Total</span><span>$68.19</span></div>
+  <div class="lbl">Pay with</div><div class="chips"><span class="on">Card</span><span>Apple Pay</span><span>G Pay</span></div>
+  <div class="btn">Reserve &amp; pay</div>
+  <div class="tick"><b>RECEIPT</b><br>No. TE-000231 · 0.2 mi away<br>11/15/2026, 8:30 PM (EST)<br>350 W 50th St, Apt 4B, New York, NY 10019<br>Emily Clark · (212) 555-0123<br>Tip $9.00 (18%)</div></div>
+ <div class="phone"><div class="bar">Récapitulatif <span class="flag">FR</span></div>
+  <div class="row"><span>Stationnement 2 h × 4,50 €</span><span>9,00 €</span></div><div class="row"><span>Voiturier</span><span>6,00 €</span></div>
+  <div class="row"><span>Sous-total TTC (TVA 20 %)</span><span>15,00 €</span></div>
+  <div class="lbl">Service compris</div><div class="chips"><span class="on">+ Ajouter un pourboire : 1,00 €</span></div>
+  <div class="row tot"><span>Total</span><span>16,00 €</span></div>
+  <div class="lbl">Payer avec</div><div class="chips"><span class="on">Carte Bancaire</span><span>Apple Pay</span></div>
+  <div class="btn">Réserver et payer</div>
+  <div class="tick"><b>FACTURE</b><br>N° TE-000231 · SIRET 000 000 000 00000<br>15/11/2026 20:30 (UTC+1)<br>12 rue de Rivoli, 75004 Paris<br>Camille Martin · 06 12 34 56 78<br>HT 12,50 € · TVA 2,50 €</div></div>
+ <div class="phone"><div class="bar">予約内容の確認 <span class="flag">JP</span></div>
+  <div class="row"><span>駐車 2時間 × ￥700</span><span>￥1,400</span></div><div class="row"><span>バレーサービス</span><span>￥1,000</span></div>
+  <div class="row"><span>小計（税込・消費税10%）</span><span>￥2,400</span></div>
+  <div class="lbl">チップ</div><div style="color:#64748B">表示なし（日本の慣習）</div>
+  <div class="row tot"><span>合計</span><span>￥2,400</span></div>
+  <div class="lbl">お支払い方法</div><div class="chips"><span class="on">クレジットカード</span><span>PayPay</span></div>
+  <div class="btn">予約して支払う</div>
+  <div class="tick"><b>領収書（適格請求書）</b><br>No. TE-000231 · 登録番号 T0000000000000<br>2026/11/15 20:30 (JST)<br>〒100-0005 東京都千代田区丸の内1-9-1<br>山田 太郎 様 · 090-1234-5678<br>うち消費税 ￥218</div></div>
+</div>
+</section>
+
+<!-- ============ 7. DISEÑO FÍSICO ============ -->
+<section class="newpage">
+<h1>7. Diseño físico</h1>
+<h2>7.1 Arquitectura de red subyacente</h2>
+<p><b>Modelo de nube:</b> <i>híbrido</i>. Nube pública en São Paulo, us-east (Virginia, para Nueva York), París y Tokio; en Colombia, centro de datos de un proveedor local en Bogotá (nube privada/colocación) para mantener los datos en el país, con respaldo cifrado en us-east (país con nivel adecuado según la SIC). <b>Modelo de servicio:</b> IaaS (VPC, máquinas, balanceadores), PaaS (Kubernetes administrado, PostgreSQL administrado, colas) y SaaS hacia los comercios (panel web). Cada región es idéntica (infraestructura como código parametrizada por país).</p>
+<div class="fig">
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="8.8">
+ <rect x="250" y="4" width="260" height="34" rx="8" fill="#E0E7FF" stroke="#6366F1"/>
+ <text x="380" y="18" text-anchor="middle" font-weight="700">DNS global (GeoDNS + DNSSEC) · CDN / WAF anycast</text>
+ <text x="380" y="31" text-anchor="middle">tuespacio.co · .com.br · .com · .fr · .jp</text>
+ <g id="reg">
+ </g>
+ <!-- 5 regions -->
+ <g font-weight="700" text-anchor="middle" fill="#fff">
+  <rect x="10" y="60" width="140" height="150" rx="10" fill="#0B2545"/><text x="80" y="76">CO · Bogotá (privada)</text>
+  <rect x="160" y="60" width="140" height="150" rx="10" fill="#0B2545"/><text x="230" y="76">BR · São Paulo</text>
+  <rect x="310" y="60" width="140" height="150" rx="10" fill="#0B2545"/><text x="380" y="76">US · us-east</text>
+  <rect x="460" y="60" width="140" height="150" rx="10" fill="#0B2545"/><text x="530" y="76">FR · París</text>
+  <rect x="610" y="60" width="140" height="150" rx="10" fill="#0B2545"/><text x="680" y="76">JP · Tokio</text>
+ </g>
+ <g fill="#EEF7FF" font-size="8">
+  <g><rect x="18" y="82" width="124" height="18" rx="4"/><rect x="18" y="104" width="124" height="18" rx="4"/><rect x="18" y="126" width="124" height="28" rx="4"/><rect x="18" y="158" width="60" height="22" rx="4"/><rect x="82" y="158" width="60" height="22" rx="4"/><rect x="18" y="184" width="124" height="18" rx="4"/></g>
+  <g><rect x="168" y="82" width="124" height="18" rx="4"/><rect x="168" y="104" width="124" height="18" rx="4"/><rect x="168" y="126" width="124" height="28" rx="4"/><rect x="168" y="158" width="60" height="22" rx="4"/><rect x="232" y="158" width="60" height="22" rx="4"/><rect x="168" y="184" width="124" height="18" rx="4"/></g>
+  <g><rect x="318" y="82" width="124" height="18" rx="4"/><rect x="318" y="104" width="124" height="18" rx="4"/><rect x="318" y="126" width="124" height="28" rx="4"/><rect x="318" y="158" width="60" height="22" rx="4"/><rect x="382" y="158" width="60" height="22" rx="4"/><rect x="318" y="184" width="124" height="18" rx="4"/></g>
+  <g><rect x="468" y="82" width="124" height="18" rx="4"/><rect x="468" y="104" width="124" height="18" rx="4"/><rect x="468" y="126" width="124" height="28" rx="4"/><rect x="468" y="158" width="60" height="22" rx="4"/><rect x="532" y="158" width="60" height="22" rx="4"/><rect x="468" y="184" width="124" height="18" rx="4"/></g>
+  <g><rect x="618" y="82" width="124" height="18" rx="4"/><rect x="618" y="104" width="124" height="18" rx="4"/><rect x="618" y="126" width="124" height="28" rx="4"/><rect x="618" y="158" width="60" height="22" rx="4"/><rect x="682" y="158" width="60" height="22" rx="4"/><rect x="618" y="184" width="124" height="18" rx="4"/></g>
+ </g>
+ <g font-size="7.6" text-anchor="middle" fill="#0F1B2D">
+  <text x="80" y="94">Firewall + LB (DMZ)</text><text x="80" y="116">API Gateway · WAF</text><text x="80" y="138">Kubernetes: S1…S10</text><text x="80" y="149">(2 zonas de disp.)</text><text x="48" y="172">PostgreSQL</text><text x="112" y="172">RabbitMQ ×3</text><text x="80" y="196">Redis · DNS · NTP</text>
+  <text x="230" y="94">Firewall + LB (DMZ)</text><text x="230" y="116">API Gateway · WAF</text><text x="230" y="138">Kubernetes: S1…S10</text><text x="230" y="149">(2 zonas de disp.)</text><text x="198" y="172">PostgreSQL</text><text x="262" y="172">RabbitMQ ×3</text><text x="230" y="196">Redis · DNS · NTP</text>
+  <text x="380" y="94">Firewall + LB (DMZ)</text><text x="380" y="116">API Gateway · WAF</text><text x="380" y="138">Kubernetes: S1…S10</text><text x="380" y="149">(2 zonas de disp.)</text><text x="348" y="172">PostgreSQL</text><text x="412" y="172">RabbitMQ ×3</text><text x="380" y="196">Redis · DNS · NTP</text>
+  <text x="530" y="94">Firewall + LB (DMZ)</text><text x="530" y="116">API Gateway · WAF</text><text x="530" y="138">Kubernetes: S1…S10</text><text x="530" y="149">(2 zonas de disp.)</text><text x="498" y="172">PostgreSQL</text><text x="562" y="172">RabbitMQ ×3</text><text x="530" y="196">Redis · DNS · NTP</text>
+  <text x="680" y="94">Firewall + LB (DMZ)</text><text x="680" y="116">API Gateway · WAF</text><text x="680" y="138">Kubernetes: S1…S10</text><text x="680" y="149">(2 zonas de disp.)</text><text x="648" y="172">PostgreSQL</text><text x="712" y="172">RabbitMQ ×3</text><text x="680" y="196">Redis · DNS · NTP</text>
+ </g>
+ <g stroke="#3FA2FF" stroke-width="1" fill="none"><path d="M380,38 L80,60"/><path d="M380,38 L230,60"/><path d="M380,38 L380,60"/><path d="M380,38 L530,60"/><path d="M380,38 L680,60"/></g>
+ <g stroke="#F97316" stroke-width="1.6" fill="none" stroke-dasharray="5 3">
+  <path d="M80,210 C80,240 680,240 680,210"/><path d="M230,210 C230,232 530,232 530,210"/><path d="M80,210 Q155,226 230,210"/><path d="M380,210 Q455,226 530,210"/><path d="M530,210 Q605,226 680,210"/><path d="M230,210 Q305,226 380,210"/>
+ </g>
+ <text x="380" y="252" text-anchor="middle" fill="#B45309" font-weight="600">Malla VPN IPsec entre regiones (10 enlaces /30 en 10.255.0.0/24) · solo perfiles, tasas, agregados y respaldos</text>
+ <g font-size="8.4">
+  <rect x="10" y="262" width="230" height="34" rx="7" fill="#F4F6F9" stroke="#94A3B8"/><text x="125" y="276" text-anchor="middle" font-weight="600">Usuarios: 4G/5G (no guiado) · Wi-Fi</text><text x="125" y="289" text-anchor="middle">HTTPS/QUIC hacia la región de su país</text>
+  <rect x="265" y="262" width="230" height="34" rx="7" fill="#F4F6F9" stroke="#94A3B8"/><text x="380" y="276" text-anchor="middle" font-weight="600">Oficina Bogotá: LAN Cat 6A + Wi-Fi 6</text><text x="380" y="289" text-anchor="middle">VPN hacia CO · DHCP · NTP interno</text>
+  <rect x="520" y="262" width="230" height="34" rx="7" fill="#F4F6F9" stroke="#94A3B8"/><text x="635" y="276" text-anchor="middle" font-weight="600">Enlaces: fibra monomodo entre zonas</text><text x="635" y="289" text-anchor="middle">tránsito IP del proveedor entre países</text>
+ </g>
+</svg>
+<div class="cap">Figura 5. Topología general y por país: cinco regiones idénticas, independientes para el tráfico de usuarios y unidas por una malla VPN para la información compartida.</div>
+</div>
+
+<h2>7.2 Direccionamiento IPv4 (VLSM) e IPv6</h2>
+<p>Rangos privados RFC 1918: un bloque <code>/16</code> por país (CO <code>10.10.0.0/16</code>, BR <code>10.20.0.0/16</code>, US <code>10.30.0.0/16</code>, FR <code>10.40.0.0/16</code>, JP <code>10.50.0.0/16</code>; reservado MX <code>10.60.0.0/16</code>) y <code>10.255.0.0/24</code> para enlaces entre países. Detalle VLSM de Colombia (las demás regiones repiten la plantilla cambiando el segundo octeto), asignando de mayor a menor:</p>
+<table>
+<tr><th>Subred (CO)</th><th>Hosts req.</th><th>Red / prefijo</th><th>Máscara</th><th>Rango utilizable</th><th>Broadcast</th></tr>
+<tr><td class="k">Servicios (nodos y contenedores)</td><td>1 500</td><td>10.10.0.0/21</td><td>255.255.248.0</td><td>10.10.0.1 – 10.10.7.254 (2 046)</td><td>10.10.7.255</td></tr>
+<tr><td class="k">Oficina Wi-Fi</td><td>400</td><td>10.10.8.0/23</td><td>255.255.254.0</td><td>10.10.8.1 – 10.10.9.254 (510)</td><td>10.10.9.255</td></tr>
+<tr><td class="k">Oficina LAN cableada</td><td>200</td><td>10.10.10.0/24</td><td>255.255.255.0</td><td>10.10.10.1 – 10.10.10.254 (254)</td><td>10.10.10.255</td></tr>
+<tr><td class="k">Datos (PostgreSQL, Redis)</td><td>40</td><td>10.10.11.0/26</td><td>255.255.255.192</td><td>10.10.11.1 – 10.10.11.62 (62)</td><td>10.10.11.63</td></tr>
+<tr><td class="k">Mensajería (RabbitMQ)</td><td>20</td><td>10.10.11.64/27</td><td>255.255.255.224</td><td>10.10.11.65 – 10.10.11.94 (30)</td><td>10.10.11.95</td></tr>
+<tr><td class="k">Gestión y monitoreo</td><td>20</td><td>10.10.11.96/27</td><td>255.255.255.224</td><td>10.10.11.97 – 10.10.11.126 (30)</td><td>10.10.11.127</td></tr>
+<tr><td class="k">DMZ (LB, gateway, bastión)</td><td>10</td><td>10.10.11.128/28</td><td>255.255.255.240</td><td>10.10.11.129 – 10.10.11.142 (14)</td><td>10.10.11.143</td></tr>
+<tr><td class="k">Infraestructura (DNS, NTP, DHCP)</td><td>5</td><td>10.10.11.144/29</td><td>255.255.255.248</td><td>10.10.11.145 – 10.10.11.150 (6)</td><td>10.10.11.151</td></tr>
+<tr><td class="k">Enlace VPN CO–BR (ej. de 10)</td><td>2</td><td>10.255.0.0/30</td><td>255.255.255.252</td><td>10.255.0.1 – 10.255.0.2</td><td>10.255.0.3</td></tr>
+</table>
+<p class="small">Los otros nueve enlaces usan 10.255.0.4/30 … 10.255.0.36/30. Queda libre 10.10.11.152 – 10.10.255.255 para crecimiento.</p>
+<p><b>Direcciones públicas</b> (justificadas): solo en los balanceadores/anycast de la CDN, las IP elásticas de los gateways NAT de salida (para que pasarelas y autoridades fiscales puedan poner nuestras IP en lista blanca) y los extremos VPN. En este documento se ilustran con rangos de documentación (RFC 5737): CO <code>203.0.113.10</code>, BR <code>203.0.113.20</code>, etc. <b>IPv6 (CO)</b>: prefijo <code>2001:db8:a10::/48</code> (RFC 3849), subredes <code>/64</code>: servicios <code>2001:db8:a10:1::/64</code>, datos <code>:2::/64</code>, mensajería <code>:3::/64</code>, gestión <code>:4::/64</code>, DMZ <code>:5::/64</code>, oficina LAN <code>:10::/64</code> y Wi-Fi <code>:11::/64</code> (SLAAC + DHCPv6 sin estado); la doble pila permite atender redes móviles que ya son mayoritariamente IPv6.</p>
+
+<h2>7.3 Nombres de dominio y DNS</h2>
+<p>Dominios regionales: <code>tuespacio.co</code>, <code>tuespacio.com.br</code>, <code>tuespacio.com</code> (EE. UU. y marca global), <code>tuespacio.fr</code> y <code>tuespacio.jp</code> (el <code>.jp</code> exige presencia local, cubierta por la filial japonesa). Registros: <b>SOA/NS</b> (autoritativos en dos proveedores anycast), <b>A/AAAA</b> para <code>api.</code> y <code>app.</code>, <b>CNAME</b> <code>www → app</code> y estáticos a la CDN, <b>MX</b> y <b>TXT</b> (SPF, DKIM, DMARC), <b>CAA</b> (solo nuestra CA), <b>SRV</b> internos y <b>DS</b> (DNSSEC). Resolución: GeoDNS envía a cada usuario a la región de su país, con chequeo de salud para retirar una región caída; TTL 60 s en <code>api.</code> (conmutación rápida) y 3 600 s en registros estables. Zona interna <code>svc.tuespacio.internal</code> en horizonte dividido (CoreDNS por clúster + resolutores de caché en la subred de infraestructura, réplicas secundarias por región).</p>
+
+<h2>7.4 DHCP y NTP</h2>
+<p><b>DHCP</b> solo en las redes de oficina: servidor en 10.10.11.145 con <i>relay</i> en el switch de núcleo; ámbito LAN 10.10.10.50–10.10.10.250 (arrendamiento 8 h; reservas para impresoras y AP), Wi-Fi 10.10.8.10–10.10.9.250 (2 h). Servidores y contenedores usan direcciones estáticas o IPAM del orquestador. <b>NTP</b>: dos servidores chrony por región (estrato 2) en la subred de infraestructura sincronizados con fuentes oficiales (CO <code>co.pool.ntp.org</code> + INM, BR <code>a.ntp.br</code> (NIC.br), US <code>time.nist.gov</code>, FR <code>fr.pool.ntp.org</code>, JP <code>ntp.nict.jp</code>), con NTS (RFC 8915) donde está disponible; todos los nodos sincronizan contra ellos.</p>
+</section>
+
+<section>
+<h2>7.5 Puertos y protocolos</h2>
+<table>
+<tr><th>Servicio</th><th>Protocolo</th><th>Puerto</th><th>Transp.</th><th>Justificación</th></tr>
+<tr><td class="k">Web, API REST, WebSocket</td><td>HTTPS (TLS 1.3), HTTP/2</td><td>443</td><td>TCP</td><td>Fiabilidad y orden: pagos, reservas, autenticación. Único puerto expuesto al público.</td></tr>
+<tr><td class="k">App ↔ API (HTTP/3) y ubicación en camino</td><td>QUIC</td><td>443</td><td>UDP</td><td>Menor latencia en móviles; la posición tolera pérdidas.</td></tr>
+<tr><td class="k">Redirección a HTTPS</td><td>HTTP</td><td>80</td><td>TCP</td><td>Solo devuelve 301 + HSTS.</td></tr>
+<tr><td class="k">Broker de mensajes</td><td>AMQPS · gestión HTTPS</td><td>5671 · 15671</td><td>TCP</td><td>Entrega garantizada; acceso interno con mTLS.</td></tr>
+<tr><td class="k">Base de datos</td><td>PostgreSQL (TLS)</td><td>5432</td><td>TCP</td><td>Solo desde la subred de servicios.</td></tr>
+<tr><td class="k">Caché</td><td>Redis (TLS)</td><td>6380</td><td>TCP</td><td>Interna.</td></tr>
+<tr><td class="k">Coordinación</td><td>etcd</td><td>2379 / 2380</td><td>TCP</td><td>Elección de líder (Raft).</td></tr>
+<tr><td class="k">DNS · DNS sobre TLS</td><td>DNS · DoT</td><td>53 · 853</td><td>UDP (TCP para respuestas grandes y transferencias) · TCP</td><td>UDP por velocidad; TCP para DNSSEC y AXFR/IXFR.</td></tr>
+<tr><td class="k">Hora</td><td>NTP · NTS-KE</td><td>123 · 4460</td><td>UDP · TCP</td><td>NTP en UDP: paquetes pequeños, la retransmisión falsearía la medición.</td></tr>
+<tr><td class="k">DHCP · DHCPv6</td><td>DHCP</td><td>67/68 · 546/547</td><td>UDP</td><td>Difusión en la LAN de oficina.</td></tr>
+<tr><td class="k">VPN entre regiones</td><td>IPsec IKEv2 · NAT-T · ESP</td><td>500 · 4500 · protocolo IP 50</td><td>UDP</td><td>Túneles cifrados sitio a sitio.</td></tr>
+<tr><td class="k">Administración</td><td>SSH (solo bastión con MFA)</td><td>22</td><td>TCP</td><td>Acceso restringido a la VPN de gestión.</td></tr>
+<tr><td class="k">Correo transaccional</td><td>SMTP submission (STARTTLS)</td><td>587</td><td>TCP</td><td>Envío de comprobantes por correo.</td></tr>
+<tr><td class="k">Push</td><td>FCM / APNs (HTTP/2)</td><td>443 (APNs) · 5228–5230 (FCM)</td><td>TCP</td><td>Canales de los fabricantes.</td></tr>
+<tr><td class="k">Monitoreo</td><td>Prometheus · node exporter · syslog TLS</td><td>9090 · 9100 · 6514</td><td>TCP</td><td>Recolección de métricas y logs internos.</td></tr>
+</table>
+<p><b>TCP frente a UDP:</b> todo lo que cambia estado o mueve dinero (T0, pagos, check-in, comprobantes) va sobre TCP/TLS porque exige entrega confiable, en orden y sin duplicados. La posición del conductor en camino, DNS y NTP van sobre UDP: son mensajes cortos y frecuentes donde un dato nuevo reemplaza al perdido.</p>
+
+<h2>7.6 Dispositivos de interconexión y medios</h2>
+<p><b>Routers</b> de borde con BGP hacia dos proveedores por región; <b>firewalls</b> de nueva generación (perímetro y entre zonas); <b>balanceadores</b> L4/L7 redundantes; <b>switches</b> L3 de núcleo y de acceso PoE en la oficina; <b>access points</b> Wi-Fi 6 (802.11ax) con WPA3-Enterprise. <b>Medios guiados:</b> fibra monomodo entre zonas de disponibilidad y hacia los proveedores, fibra multimodo en el centro de datos, UTP Cat 6A en la oficina. <b>No guiados:</b> 4G LTE/5G de los usuarios y operadores de entrada, Wi-Fi en oficina y parqueaderos.</p>
+
+<h2>7.7 Seguridad de la red</h2>
+<p>Segmentación por subred/VLAN y grupos de seguridad con mínimo privilegio (solo la DMZ recibe tráfico público; la subred de datos solo acepta 5432/6380 desde servicios); VPN IPsec IKEv2 (AES-256-GCM) en malla entre regiones y VPN de acceso remoto con MFA para administración; TLS 1.3 con certificados públicos ACME por dominio y PKI interna con certificados de corta vida para mTLS; HSTS, OCSP stapling y registros CAA.</p>
+
+<h2>7.8 Modelo de capas (OSI y TCP/IP)</h2>
+<table>
+<tr><th>Capa OSI</th><th>Capa TCP/IP</th><th>Componentes de Tu Espacio</th></tr>
+<tr><td class="k">7 Aplicación</td><td rowspan="3">Aplicación</td><td>Apps, API REST, AMQP, DNS, NTP, DHCP, SMTP, servicios S1–S10, WAF, API Gateway, balanceador L7</td></tr>
+<tr><td class="k">6 Presentación</td><td>JSON UTF-8, CloudEvents, cifrado TLS 1.3, formatos CLDR</td></tr>
+<tr><td class="k">5 Sesión</td><td>Sesiones TLS, conexiones WebSocket y AMQP, tokens JWT</td></tr>
+<tr><td class="k">4 Transporte</td><td>Transporte</td><td>TCP (443, 5671, 5432), UDP (QUIC, 53, 123), balanceador L4</td></tr>
+<tr><td class="k">3 Red</td><td>Internet</td><td>IPv4/IPv6, routers, IPsec, firewalls de red, BGP</td></tr>
+<tr><td class="k">2 Enlace · 1 Física</td><td>Acceso a la red</td><td>Switches, VLAN, Wi-Fi 802.11ax, LTE/5G · fibra, UTP Cat 6A, radio</td></tr>
+</table>
+</section>
+
+<!-- ============ 8. PROTOTIPO ============ -->
+<section>
+<h1>8. Implementación del prototipo y pruebas</h1>
+<p><b>Tecnología:</b> React Native + Expo SDK 58 (JavaScript) con Expo Router: una sola base de código para Android, iOS y web. La app nunca accede a datos directamente: todo pasa por <code>api/index.js → transport.js</code>, que en modo <code>mock</code> resuelve en un backend simulado dividido por servicios (<code>auth</code>, <code>catalog</code>, <code>reservations</code>, <code>payments</code>, <code>panel</code>) con un enrutador REST, y en modo <code>http</code> envía las mismas peticiones a un backend real (<code>EXPO_PUBLIC_API_URL</code>) que debe cumplir el contrato <code>docs/API.md</code>.</p>
+<p><b>Funcionalidad implementada:</b> registro e inicio de sesión de conductor, dueño y anfitrión; búsqueda por destino con filtros (carro/moto, techado, sin entregar llaves, formal/particular) y orden por cercanía o precio; detalle con condiciones; transacción T0 completa (T11→T12→T21→T22→T23→T13) con compensaciones, idempotencia y registro paso a paso; código de reserva, llegada, salida y cancelación con reembolso simulado; panel del dueño (ocupación en vivo, entradas sin reserva, métricas, edición de cupos, tarifas, horarios y condiciones) y del anfitrión (espacios, reservas, ingresos, verificación de identidad simulada); modo oscuro e interfaz en 7 idiomas (navegación, perfil y configuración); herramientas de demostración para inyectar fallas.</p>
+
+<h2>8.1 Estado frente a los requisitos de implementación (sección 7 del enunciado)</h2>
+<table>
+<tr><th>Requisito</th><th>Estado</th><th>Evidencia / pendiente</th></tr>
+<tr><td class="k">7.1 Cinco instancias regionales en contenedores comunicadas por red</td><td><span class="pill des">Diseñado</span></td><td>El prototipo ejecuta el backend simulado dentro de la app. El despliegue en 5 contenedores con el mismo código y variable <code>REGION</code> está especificado en el Anexo B.</td></tr>
+<tr><td class="k">7.2 Única base de código parametrizada por perfiles</td><td><span class="pill part">Parcial</span></td><td>Una sola base de código; textos de interfaz externalizados en 7 idiomas. El motor de RegionProfile (Anexo A) está diseñado y validado con Intl; el contenido operativo aún usa formato COP.</td></tr>
+<tr><td class="k">7.3 ≥ 4 subsistemas como procesos independientes con middleware</td><td><span class="pill part">Parcial</span></td><td>Cinco servicios separados lógicamente con contrato REST y conmutador <code>mock|http</code>; aún comparten proceso. Broker AMQP especificado en el Anexo B.</td></tr>
+<tr><td class="k">7.4 Flujo completo de extremo a extremo</td><td><span class="pill ok">Implementado (CO)</span></td><td>Catálogo → resumen → pago simulado → código → llegada → salida. Comprobante fiscal por país: diseñado (sección 6.1).</td></tr>
+<tr><td class="k">7.5 Pruebas de falla</td><td><span class="pill ok">Implementado</span></td><td>Inyección de fallas en la app (Herramientas de demo) y pruebas automatizadas de la tabla 8.2.</td></tr>
+<tr><td class="k">7.6 Pruebas de localización en 5 países</td><td><span class="pill part">Parcial</span></td><td>Resultados calculados con el motor CLDR (sección 9); pendiente integrarlos en las pantallas operativas.</td></tr>
+<tr><td class="k">7.7 Repositorio, instrucciones y datos de prueba</td><td><span class="pill part">Parcial</span></td><td><code>README.md</code>, <code>docs/API.md</code>, cuentas de prueba ficticias; falta inicializar el control de versiones (git).</td></tr>
+</table>
+
+<h2>8.2 Pruebas de falla ejecutadas</h2>
+<p>Se ejecutó el servicio real de reservas del prototipo (<code>src/api/mock/services/reservations.js</code>) desde Node.js 24 con un arnés de pruebas, sin modificarlo, el 16 de noviembre de 2026. Resultados observados:</p>
+<table>
+<tr><th>#</th><th>Escenario (cómo se provoca)</th><th>Comportamiento esperado</th><th>Resultado observado</th></tr>
+<tr><td class="k">1</td><td>Reserva normal</td><td>T0 confirmada, cobro capturado</td><td><span class="pill ok">OK</span> T11→T12→T21→T22→T23→T13, reserva <code>TE-…</code> confirmada, pago <code>captured</code> (1,76 s)</td></tr>
+<tr><td class="k">2</td><td>Otro conductor toma el último cupo (falla <code>taken</code>)</td><td>Abortar antes de cobrar y ofrecer alternativas</td><td><span class="pill ok">OK</span> 409 <code>SPACE_TAKEN</code> en T11, sin T21; alternativas: «Garaje cubierto Cra. 11», «Edificio Ágora · Sótano»</td></tr>
+<tr><td class="k">3</td><td>Pago rechazado (<code>declined</code>)</td><td>Compensar T12 (liberar cupo)</td><td><span class="pill ok">OK</span> 402 <code>PAYMENT_DECLINED</code> en T21 → C12 «cupo liberado»</td></tr>
+<tr><td class="k">4</td><td>Pasarela sin respuesta (<code>timeout</code>) — detención del nodo de pagos</td><td>Reintentar con la misma llave; luego liberar</td><td><span class="pill ok">OK</span> 3 reintentos con la misma llave → 504 <code>GATEWAY_TIMEOUT</code> → C12</td></tr>
+<tr><td class="k">5</td><td>Reintento del cliente con la misma <code>idempotencyKey</code></td><td>Devolver la misma reserva sin doble cobro</td><td><span class="pill ok">OK</span> mismo código de reserva, una sola transacción registrada</td></tr>
+<tr><td class="k">6</td><td>Dos conductores reservan <i>a la vez</i> el único cupo de un garaje (capacidad 1)</td><td>Solo uno gana; el otro recibe «cupo tomado»</td><td><span class="pill no">FALLA</span> ambas T0 confirmadas (2 reservas sobre capacidad 1)</td></tr>
+<tr><td class="k">7</td><td>Cancelación antes de la llegada</td><td>Reserva cancelada y reembolso</td><td><span class="pill ok">OK</span> estado <code>cancelled</code>, pago <code>refunded</code></td></tr>
+</table>
+<div class="warnbox"><b>Hallazgo de la prueba 6.</b> En el backend simulado, T11 (verificar) y T12 (retener) están separados por una espera asíncrona, así que dos peticiones concurrentes ven el cupo libre antes de que cualquiera lo retenga (condición de carrera <i>check-then-act</i>). Es exactamente el riesgo identificado en el análisis comparativo. <b>Corrección:</b> verificar y retener en una sola operación atómica, sin espera intermedia (en el mock), y en el backend real con la actualización condicional <code>UPDATE … WHERE libres &gt; 0</code> de la sección 3.6, cuyo resultado de 0 filas significa «otro conductor ganó».</div>
+<p><b>Ejecución:</b> <code>cd app &amp;&amp; npm install &amp;&amp; npx expo start</code> (Expo Go, emulador o <code>--web</code>); cuentas <code>conductor@demo.test</code>, <code>parqueadero@demo.test</code>, <code>anfitrion@demo.test</code> con contraseña <code>demo123</code>. Las fallas se inyectan desde Perfil → Herramientas de demo, que también muestra el registro paso a paso de cada T0.</p>
+</section>
+
+<!-- ============ 9. CASO DE PRUEBA ============ -->
+<section>
+<h1>9. Caso de prueba obligatorio</h1>
+<p>Pedido lógico único: <b>2 horas de parqueo de carro + 1 servicio de valet + 1 propina</b> (equivalente a «dos almuerzos, un domicilio y una propina»), a las <b>20:30 hora local del domingo 15 de noviembre de 2026</b>. Las cifras se calcularon con un único motor que solo lee el RegionProfile (Intl/CLDR de Node.js 24) y coinciden con las maquetas de la sección 6.1.</p>
+<table>
+<tr><th>Elemento</th><th>Colombia (es-CO)</th><th>Brasil (pt-BR)</th><th>Estados Unidos (en-US)</th><th>Francia (fr-FR)</th><th>Japón (ja-JP)</th></tr>
+<tr><td class="k">Idioma y estado</td><td>«Resumen de la reserva» · Confirmada</td><td>«Resumo da reserva» · Confirmada</td><td>«Booking summary» · Confirmed</td><td>«Récapitulatif» · Confirmée</td><td>「予約内容の確認」· 確定</td></tr>
+<tr><td class="k">Subtotal (parqueo + valet)</td><td>$ 15.000 + $ 5.000 = $ 20.000</td><td>R$ 28,00 + R$ 10,00 = R$ 38,00</td><td>$40.00 + $10.00 = $50.00</td><td>9,00 € + 6,00 € = 15,00 €</td><td>￥1,400 + ￥1,000 = ￥2,400</td></tr>
+<tr><td class="k">Impuesto</td><td>IVA 19 % incluido: $ 3.193 (base $ 16.807)</td><td>ISS 5 % incluso: R$ 1,81 (base R$ 36,19)</td><td>Parking tax 18.375 % añadido: $9.19</td><td>TVA 20 % incluse : 2,50 € (HT 12,50 €)</td><td>消費税10%（内税）: ￥218</td></tr>
+<tr><td class="k">Propina</td><td>Opcional, sugerida 10 %: $ 2.000</td><td>Opcional, monto fijo: R$ 3,00</td><td>Sugerida y preseleccionada 18 %: $9.00</td><td>Servicio incluido; añadida manualmente: 1,00 €</td><td>Ausente (no se muestra): ￥0</td></tr>
+<tr><td class="k">Total</td><td><b>$ 22.000</b></td><td><b>R$ 41,00</b></td><td><b>$68.19</b></td><td><b>16,00 €</b></td><td><b>￥2,400</b></td></tr>
+<tr><td class="k">Almacenamiento (unidad menor)</td><td>2 200 000 COP (exp. 2)</td><td>4 100 BRL</td><td>6 819 USD</td><td>1 600 EUR</td><td>2 400 JPY (exp. 0)</td></tr>
+<tr><td class="k">Fecha y hora mostrada</td><td>15/11/2026, 8:30 p. m. (COT)</td><td>15/11/2026 20:30 (BRT)</td><td>11/15/2026, 8:30 PM (EST)</td><td>15/11/2026 20:30 (UTC+1)</td><td>2026/11/15 20:30 (JST)</td></tr>
+<tr><td class="k">Instante guardado (UTC)</td><td>2026-11-16T01:30:00Z</td><td>2026-11-15T23:30:00Z</td><td>2026-11-16T01:30:00Z</td><td>2026-11-15T19:30:00Z</td><td>2026-11-15T11:30:00Z</td></tr>
+<tr><td class="k">Dirección y teléfono (validados)</td><td>Cra. 9 # 72-15, Chapinero, Bogotá · 310 555 0123</td><td>Rua Augusta, 1500, ap. 12, Consolação, São Paulo – SP, 01304-001 · (11) 95555-0123</td><td>350 W 50th St, Apt 4B, New York, NY 10019 · (212) 555-0123</td><td>12 rue de Rivoli, 75004 Paris · 06 12 34 56 78</td><td>〒100-0005 東京都千代田区丸の内1-9-1 · 090-1234-5678 · 山田 太郎</td></tr>
+<tr><td class="k">Comprobante</td><td>Factura electrónica de venta (DIAN)</td><td>NFS-e (Prefeitura de São Paulo)</td><td>Receipt</td><td>Facture</td><td>領収書（適格請求書）</td></tr>
+<tr><td class="k">Medios de pago</td><td>PSE, Nequi, tarjeta</td><td>Pix, cartão</td><td>Card, Apple Pay, Google Pay</td><td>Carte Bancaire, Apple Pay</td><td>クレジットカード, PayPay</td></tr>
+</table>
+<p class="small">En EE. UU. el impuesto se suma al final y la propina se calcula sobre el subtotal antes de impuestos; en los demás países el precio publicado ya incluye el impuesto (<code>tax.included = true</code>). En Francia el separador antes de «€» es un espacio no separable y el de miles es U+202F, como produce CLDR. El 15 de noviembre ya no rige el horario de verano en Nueva York ni en París.</p>
+</section>
+
+<!-- ============ 10. CONCLUSIONES ============ -->
+<section>
+<h1>10. Conclusiones</h1>
+<ul>
+<li>La transacción T0 «Reservar cupo con pago» concentra el valor del negocio y el riesgo técnico; resolverla como saga orquestada con retención con vencimiento, idempotencia y compensaciones permite atomicidad aunque la pasarela no participe en un 2PC.</li>
+<li>Partir los datos por país da al mismo tiempo cumplimiento legal (residencia), aislamiento de fallas (un país caído no afecta a los otros cuatro) y escalabilidad sin tablas centrales; la consistencia fuerte se limita a reservas y pagos, y el resto es eventual.</li>
+<li>Llevar las diferencias entre países a un RegionProfile de datos hace que abrir un sexto país sea configuración y despliegue, no programación.</li>
+<li>Las pruebas confirmaron reintentos, compensación e idempotencia, y detectaron una condición de carrera en la verificación y retención del cupo en el backend simulado: la evidencia de que la exclusión mutua debe ser una única operación atómica en el dueño del dato.</li>
+<li>Siguientes pasos: desplegar los servicios como procesos en los cinco contenedores con el broker (Anexo B), conectar el motor RegionProfile a las pantallas operativas y validar las cifras con la Fase 0.</li>
+</ul>
+
+<h2>Referencias</h2>
+<ol class="small">
+<li>Universidad Central (2026). <i>Proyecto de asignatura: Diseño de un Sistema Distribuido</i>. Sistemas Distribuidos.</li>
+<li>Equipo Tu Espacio (2026). <i>Tu Espacio: Tu parqueadero, resuelto antes de salir</i>; <i>Análisis comparativo</i>; <i>Plan de expansión internacional</i>; <i>Reserva de cupo con pago (T0)</i>. Documentos de proyecto, Universidad Central.</li>
+<li>Coulouris, G., Dollimore, J., Kindberg, T. y Blair, G. (2012). <i>Distributed Systems: Concepts and Design</i> (5.ª ed.). Addison-Wesley.</li>
+<li>Tanenbaum, A. S. y van Steen, M. (2017). <i>Distributed Systems</i> (3.ª ed.). distributed-systems.net.</li>
+<li>Unicode Consortium. <i>Common Locale Data Repository (CLDR)</i>. https://cldr.unicode.org · IANA. <i>Time Zone Database</i>. https://www.iana.org/time-zones</li>
+<li>ISO 4217 (códigos de moneda) · UIT-T E.164 (numeración telefónica).</li>
+<li>DIAN, Oficio 007244 de 2017 (IVA del 19 % en servicios de parqueadero). https://cdn.actualicese.com/normatividad/2017/Conceptos/C7244-17.pdf</li>
+<li>Prefeitura de São Paulo, Lei 13.701/2003 y Solução de Consulta SF/DEJUG n.º 2/2020 (subitem 11.01). https://www.prefeitura.sp.gov.br/cidade/upload/sc_02-2020_1606759780.pdf</li>
+<li>NYC Department of Finance. <i>New York State sales and use tax</i> (parking 18,375 % en Manhattan). https://www.nyc.gov/site/finance/business/business-nys-sales-tax.page</li>
+<li>Legalstart. <i>TVA parking</i> (taux normal 20 %). https://www.legalstart.fr/fiches-pratiques/tva-parking/ · National Tax Agency (Japón). <i>Consumption tax</i> e <i>Invoice System</i>.</li>
+<li>Ley 1581 de 2012 (Colombia) y Circular Externa 005 de 2017 de la SIC · Lei 13.709/2018 (LGPD) · Reglamento (UE) 2016/679 (RGPD) · APPI (Japón) · NY SHIELD Act.</li>
+<li>IETF: RFC 1918, RFC 3849, RFC 5737, RFC 5905 (NTPv4), RFC 8915 (NTS), RFC 8446 (TLS 1.3), RFC 9000 (QUIC) · OASIS AMQP 0-9-1 · CNCF CloudEvents 1.0.</li>
+<li>Shoup, D. (2006). Cruising for parking. <i>Transport Policy</i> 13(6) · INRIX (2017). <i>The Impact of Parking Pain</i>.</li>
+</ol>
+
+</section>
+
+<!-- ============ ANEXOS ============ -->
+<section class="newpage">
+<h1>Anexo A. RegionProfile (contrato de configuración como datos)</h1>
+<pre>[
+ {"country":"CO","city":"Bogotá","locale":"es-CO","fallback":["es","en"],"direction":"ltr",
+  "currency":{"code":"COP","exponent":2,"displayDecimals":0,"rounding":"half-up"},
+  "timeZones":["America/Bogota"],"firstDayOfWeek":"sun","units":"metric",
+  "phone":{"prefix":"+57","mobilePattern":"^3\\d{9}$","display":"3XX XXX XXXX"},
+  "postal":{"pattern":"^\\d{6}$"},"address":{"order":["street","number","neighborhood","city"]},
+  "name":{"order":["given","family"]},
+  "tax":{"name":"IVA","rate":0.19,"included":true,"source":"DIAN Oficio 7244/2017"},
+  "receipt":{"type":"factura-electronica-dian","fiscalIds":["NIT","CC"]},
+  "payments":["pse","nequi","card"],"tip":{"mode":"optional","suggestPct":[0.10]},
+  "dataLaw":{"name":"Ley 1581 de 2012","residency":"CO","backup":"US"}},
+ {"country":"BR","city":"São Paulo","locale":"pt-BR","fallback":["pt","en"],
+  "currency":{"code":"BRL","exponent":2,"displayDecimals":2},"timeZones":["America/Sao_Paulo"],
+  "phone":{"prefix":"+55","mobilePattern":"^\\d{2}9\\d{8}$","display":"(DD) 9XXXX-XXXX"},
+  "postal":{"pattern":"^\\d{5}-\\d{3}$"},"tax":{"name":"ISS","rate":0.05,"included":true,"source":"Lei 13.701/2003"},
+  "receipt":{"type":"nfs-e","fiscalIds":["CNPJ","CPF"]},"payments":["pix","card"],
+  "tip":{"mode":"optional","fixedOptions":[200,300,500]},"dataLaw":{"name":"LGPD","residency":"BR"}},
+ {"country":"US","city":"New York","locale":"en-US","currency":{"code":"USD","exponent":2,"displayDecimals":2},
+  "timeZones":["America/New_York"],"units":"imperial","phone":{"prefix":"+1","display":"(XXX) XXX-XXXX"},
+  "postal":{"pattern":"^\\d{5}(-\\d{4})?$"},
+  "tax":{"name":"Parking tax","rate":0.18375,"included":false,"byAddress":true,"source":"NYC DOF"},
+  "receipt":{"type":"receipt","fiscalIds":["EIN"]},"payments":["card","apple_pay","google_pay"],
+  "tip":{"mode":"suggested","suggestPct":[0.15,0.18,0.20],"default":0.18,"base":"pre-tax"},
+  "dataLaw":{"name":"NY SHIELD / state laws","residency":"US"}},
+ {"country":"FR","city":"Paris","locale":"fr-FR","firstDayOfWeek":"mon",
+  "currency":{"code":"EUR","exponent":2,"displayDecimals":2},"timeZones":["Europe/Paris"],
+  "phone":{"prefix":"+33","display":"0X XX XX XX XX"},"postal":{"pattern":"^\\d{5}$"},
+  "tax":{"name":"TVA","rate":0.20,"included":true},"receipt":{"type":"facture","fiscalIds":["SIRET"]},
+  "payments":["cb","apple_pay"],"tip":{"mode":"hidden"},"dataLaw":{"name":"RGPD","residency":"EU"}},
+ {"country":"JP","city":"Tokyo","locale":"ja-JP","fonts":["Noto Sans JP"],
+  "currency":{"code":"JPY","exponent":0,"displayDecimals":0},"timeZones":["Asia/Tokyo"],
+  "phone":{"prefix":"+81","display":"0X0-XXXX-XXXX"},"postal":{"pattern":"^\\d{3}-\\d{4}$"},
+  "address":{"order":["postal","prefecture","city","chome-ban-go"]},"name":{"order":["family","given"]},
+  "tax":{"name":"消費税","rate":0.10,"included":true},"receipt":{"type":"qualified-invoice","fiscalIds":["T-number"]},
+  "payments":["card","paypay"],"tip":{"mode":"none"},"dataLaw":{"name":"APPI","residency":"JP"}}
+]</pre>
+<p class="small">Motor de cálculo (el mismo para todos los países): <code>sub = Σ líneas</code>; si <code>tax.included</code>: <code>base = round(sub/(1+rate))</code>, <code>tax = sub − base</code>, <code>total = sub</code>; si no: <code>tax = round(sub·rate)</code>, <code>total = sub + tax</code>; luego <code>total += propina(tip.mode)</code>. Todo en enteros de unidad menor, redondeando a la unidad de presentación.</p>
+
+<h1 style="margin-top:10pt">Anexo B. Despliegue propuesto de las cinco regiones (docker-compose)</h1>
+<pre>x-svc: &amp;svc { image: tuespacio/api:0.2.0, restart: unless-stopped }   # misma imagen para todas
+services:
+  broker:   { image: rabbitmq:3.13-management, ports: ["5671:5671"] }          # AMQP (federación entre regiones)
+  db-co:    { image: postgis/postgis:16-3.4, environment: { POSTGRES_DB: co } }
+  reservas-co:   { &lt;&lt;: *svc, command: reservations, environment: { REGION: CO, AMQP_URL: amqps://broker } }
+  pagos-co:      { &lt;&lt;: *svc, command: payments,     environment: { REGION: CO } }
+  facturacion-co:{ &lt;&lt;: *svc, command: billing,      environment: { REGION: CO } }
+  notif-co:      { &lt;&lt;: *svc, command: notifications,environment: { REGION: CO } }
+  gateway-co:    { &lt;&lt;: *svc, command: gateway, ports: ["8081:443"], environment: { REGION: CO } }
+  # … idéntico para BR (8082), US (8083), FR (8084), JP (8085): solo cambia REGION y la base de datos
+networks: { co: {}, br: {}, us: {}, fr: {}, jp: {}, interregion: {} }   # cada región en su red</pre>
+<p class="small">Prueba de falla de nodo prevista: <code>docker stop pagos-co</code> durante una T0 → reintentos con la misma llave, compensación C12 y, al reiniciar, reconciliación por el log del coordinador; las regiones BR, US, FR y JP siguen atendiendo.</p>
+
+<h1 style="margin-top:10pt">Anexo C. Registro de la transacción T0 (salida del prototipo)</h1>
+<pre>### 4 Pasarela sin respuesta                     ### 6 Carrera real (garaje capacidad 1)
+T0  start  Coordinador inicia T0 · Torre 72      T11 ok  Cupo libre verificado (1 disponibles)  ← conductor A
+T11 ok     Cupo libre verificado (8 disponibles) T11 ok  Cupo libre verificado (1 disponibles)  ← conductor B
+T12 ok     Cupo retenido (10 min)                ...
+T21 retry  Intento 1/3 sin respuesta · llave k4  T13 ok  Reserva TE-EW6D confirmada
+T21 retry  Intento 2/3 sin respuesta · llave k4  T13 ok  Reserva TE-VWU4 confirmada
+T21 retry  Intento 3/3 sin respuesta · llave k4  → capacidad 1, reservas confirmadas 2 (falla detectada)
+T21 fail   La pasarela no respondió (simulado)
+C12 comp   Compensación: cupo liberado</pre>
+</section>
+
+</body>
+</html>
