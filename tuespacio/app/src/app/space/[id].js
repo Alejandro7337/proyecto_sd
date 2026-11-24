@@ -142,7 +142,13 @@ export default function SpaceDetail() {
       <SectionTitle title="Horario" />
       <Card>
         <Row icon="time-outline" label={s.schedule.days} value={`${s.schedule.open} – ${s.schedule.close}`} />
+        <Badge label={s.openNow ? 'Abierto ahora' : 'Cerrado ahora'} tone={s.openNow ? 'success' : 'neutral'} />
       </Card>
+      {!s.openNow ? (
+        <Note tone="warning" icon="time-outline" style={{ marginTop: space.md }}>
+          Solo puedes reservar franjas dentro del horario de atención.
+        </Note>
+      ) : null}
 
       {s.kind === 'particular' && s.host ? (
         <>

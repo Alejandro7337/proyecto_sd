@@ -1,0 +1,140 @@
+# Integración continua de Tu Espacio. No despliega ni publica nada: solo valida.
+# Sin secretos: las únicas variables son públicas (EXPO_PUBLIC_*) o credenciales efímeras de la
+# base de datos de prueba que vive dentro del job.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  app-quality:
+    name: App · lint y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tuespacio/app
+    env:
+      EXPO_PUBLIC_API_MODE: mock
+      TZ: America/Bogota
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: tuespacio/app/package-lock.json
+      - run: npm ci
+      - name: Variables de entorno
+        run: npm run env:check
+      - name: Lint
+        run: npm run lint
+      - name: Pruebas (Jest)
+        run: npm run test:ci
+      - name: Dependencias alineadas con el SDK de Expo
+        run: npx expo install --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: app-coverage
+          path: tuespacio/app/coverage/
+          retention-days: 7
+
+  app-export:
+    name: App · exportación ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    needs: app-quality
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [web, android, ios]
+    defaults:
+      run:
+        working-directory: tuespacio/app
+    env:
+      EXPO_PUBLIC_API_MODE: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: tuespacio/app/package-lock.json
+      - run: npm ci
+      - name: Exportar bundle (${{ matrix.platform }})
+        run: npx expo export --platform ${{ matrix.platform }} --output-dir dist-${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: export-${{ matrix.platform }}
+          path: tuespacio/app/dist-${{ matrix.platform }}/
+          retention-days: 7
+
+  server:
+    name: Servidor · migraciones y pruebas
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('tuespacio/server/package.json') != '' }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tuespacio/server
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          # Credenciales efímeras de un contenedor que se destruye al terminar el job.
+          POSTGRES_USER: tuespacio
+          POSTGRES_PASSWORD: ci-only-not-secret
+          POSTGRES_DB: tuespacio_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U tuespacio"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://tuespacio:ci-only-not-secret@localhost:5432/tuespacio_test
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: tuespacio/server/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Migraciones desde cero
+        run: npm run migrate
+      - name: Migraciones idempotentes (segunda ejecución no cambia nada)
+        run: npm run migrate
+      - name: Datos demo
+        run: npm run seed
+      - name: Pruebas
+        run: npm test
+
+  secrets-scan:
+    name: Revisión de secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

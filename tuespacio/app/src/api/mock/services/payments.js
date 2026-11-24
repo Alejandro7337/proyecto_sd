@@ -1,5 +1,5 @@
 // Servicio: Pagos y facturación — pasarela SIMULADA. No mueve dinero ni contacta proveedores.
-import { delay } from '../db';
+import { delay, nextId } from '../db';
 import { ApiError } from '../../errors';
 
 const MAX_ATTEMPTS = 3;
@@ -17,7 +17,13 @@ export async function authorize({ amount, idempotencyKey, fault, log }) {
     throw new ApiError('GATEWAY_TIMEOUT', 'La pasarela no respondió (simulado).', 504, { failedStep: 'payment' });
   }
   await delay(350);
-  return { id: 'auth_' + Math.random().toString(36).slice(2, 8), amount };
+  return { id: nextId('auth'), amount };
+}
+
+// Compensación de T21: libera la preautorización sin que el dinero llegue a moverse.
+export async function voidAuthorization(authId) {
+  await delay(150);
+  return { id: authId, status: 'voided' };
 }
 
 export async function capture(authId) {

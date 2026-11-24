@@ -133,7 +133,9 @@ export default function Explore() {
     );
   }
 
-  const list = spaces.data || [];
+  // Mientras llega la consulta del nuevo vehículo, la lista anterior puede traer espacios que no
+  // lo reciben: se descartan para no mostrar (ni intentar pintar) una tarifa inexistente.
+  const list = (spaces.data || []).filter((s) => s.rates[vehicle] && s.capacity[vehicle] > 0);
   const selected = list.find((s) => s.id === selectedId);
   const anyFilter = filters.covered || filters.noKeys || filters.kind;
 

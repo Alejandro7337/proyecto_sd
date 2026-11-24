@@ -1,0 +1,42 @@
+# Entorno local de Tu Espacio: PostgreSQL 16 + API.
+#   docker compose up -d db          → solo la base (para `npm run dev` en server/)
+#   docker compose up --build        → base + API en http://localhost:8080
+# Credenciales SOLO para desarrollo local; en otros ambientes se inyectan como secretos.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tuespacio
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: tuespacio
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tuespacio -d tuespacio"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://tuespacio:local-dev-only@db:5432/tuespacio
+      CORS_ORIGINS: http://localhost:8081,http://localhost:19006
+      DEMO_TOOLS: "true"
+      SAGA_STEP_DELAY_MS: "250"
+      MIGRATE_ON_START: "true"
+      SEED_ON_START: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:

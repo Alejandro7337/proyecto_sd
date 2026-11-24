@@ -7,10 +7,12 @@ import * as auth from './services/auth';
 import * as catalog from './services/catalog';
 import * as reservations from './services/reservations';
 import * as panel from './services/panel';
+import * as demo from './services/demo';
 
 const routes = [
   ['POST', '/auth/login', ({ body }) => auth.login(body)],
   ['POST', '/auth/register', ({ body }) => auth.register(body)],
+  ['POST', '/auth/logout', ({ token }) => auth.logout(token)],
   ['GET', '/me', ({ user }) => auth.me(user)],
   ['PATCH', '/me', ({ user, body }) => auth.updateMe(user, body)],
 
@@ -35,8 +37,13 @@ const routes = [
   ['GET', '/host/reservations', ({ user }) => panel.hostReservations(user)],
   ['GET', '/host/earnings', ({ user }) => panel.hostEarnings(user)],
 
+  // Solo prototipo: no existen en el backend real.
   ['GET', '/demo/transactions', () => reservations.transactionLog()],
+  ['POST', '/demo/scenarios/:name', ({ params }) => demo.runScenario(params.name)],
 ];
+
+// Rutas que no exigen sesión: un token vencido no debe impedir iniciar sesión de nuevo.
+const PUBLIC = new Set(['/auth/login', '/auth/register', '/auth/logout']);
 
 const compiled = routes.map(([method, pattern, handler]) => {
   const keys = [];
@@ -75,8 +82,8 @@ export async function handle(method, url, body, { token }) {
     route.keys.forEach((k, i) => {
       params[k] = decodeURIComponent(match[i + 1]);
     });
-    const user = auth.userFromToken(token);
-    const result = await route.handler({ params, query: parseQuery(qs), body: clone(body), user });
+    const user = PUBLIC.has(path) ? null : auth.resolveSession(token);
+    const result = await route.handler({ params, query: parseQuery(qs), body: clone(body), user, token });
     return clone(result);
   }
   throw new ApiError('NOT_FOUND', `Ruta no encontrada: ${method} ${path}`, 404);

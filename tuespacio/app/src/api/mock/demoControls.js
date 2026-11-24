@@ -5,6 +5,8 @@ export const faults = {
   // 'none' | 'taken' | 'declined' | 'timeout' — se consume en la siguiente reserva.
   nextReservation: 'none',
   latencyMs: 650,
+  // Multiplicador de los retardos simulados de la T0 y la pasarela (0 en pruebas automáticas).
+  timeScale: 1,
 };
 
 export function setFault(key, value) {

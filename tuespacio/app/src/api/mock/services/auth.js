@@ -1,13 +1,32 @@
-// Servicio: Autenticación y usuarios (simulado, sin seguridad real).
-import { getDb, publicUser } from '../db';
+// Servicio: Autenticación y usuarios (simulado).
+// El token del modo mock NO es seguro: codifica usuario y vencimiento sin firma, solo para
+// reproducir el ciclo de sesión (vence, se revoca, se restaura). El backend real debe emitir
+// tokens firmados (p. ej. JWT) y guardar contraseñas con hash (ver docs/SECURITY.md).
+import { clock, getDb, nextId, publicUser } from '../db';
 import { ApiError } from '../../errors';
-import { ROLES, VEHICLES } from '../../../domain/rules';
+import { ROLES, SESSION_TTL_HOURS, VEHICLES } from '../../../domain/rules';
 import { isValidEmail } from '../../../utils/format';
 
-export function userFromToken(token) {
+const TOKEN_PREFIX = 'mock.';
+
+export function issueToken(user, ttlMs = SESSION_TTL_HOURS * 3600000) {
+  return `${TOKEN_PREFIX}${user.id}.${clock.now() + ttlMs}`;
+}
+
+// Resuelve el token de la petición. Sin token → user null (la ruta decide si exige sesión).
+// Token inválido, revocado o vencido → 401 inmediato, igual que haría un backend real.
+export function resolveSession(token) {
   if (!token) return null;
-  const id = token.replace('mock.', '');
-  return getDb().users.find((u) => u.id === id) || null;
+  const db = getDb();
+  const match = /^mock\.(.+)\.(\d+)$/.exec(token);
+  const user = match && db.users.find((u) => u.id === match[1]);
+  if (!user || db.revokedTokens.includes(token)) {
+    throw new ApiError('UNAUTHORIZED', 'Tu sesión no es válida. Inicia sesión de nuevo.', 401);
+  }
+  if (Number(match[2]) <= clock.now()) {
+    throw new ApiError('TOKEN_EXPIRED', 'Tu sesión expiró. Inicia sesión de nuevo.', 401);
+  }
+  return user;
 }
 
 export function requireUser(user, role) {
@@ -24,7 +43,12 @@ export function login({ email = '', password = '', role }) {
   if (role && user.role !== role) {
     throw new ApiError('ROLE_MISMATCH', `Esta cuenta está registrada como ${ROLES[user.role].label.toLowerCase()}.`, 403);
   }
-  return { token: 'mock.' + user.id, user: publicUser(user) };
+  return { token: issueToken(user), user: publicUser(user) };
+}
+
+export function logout(token) {
+  if (token && !getDb().revokedTokens.includes(token)) getDb().revokedTokens.push(token);
+  return { ok: true };
 }
 
 export function register({ name = '', email = '', password = '', role, vehicle }) {
@@ -41,7 +65,7 @@ export function register({ name = '', email = '', password = '', role, vehicle }
     throw new ApiError('EMAIL_IN_USE', 'Ya existe una cuenta con ese correo.', 409, { fields: { email: 'Ya existe una cuenta con ese correo.' } });
   }
   const user = {
-    id: 'u-' + Date.now().toString(36),
+    id: nextId('u'),
     role,
     name: name.trim(),
     email: email.trim(),
@@ -49,15 +73,18 @@ export function register({ name = '', email = '', password = '', role, vehicle }
     ...(role === 'driver' ? { vehicle } : { identity: 'pending' }),
   };
   db.users.push(user);
-  return { token: 'mock.' + user.id, user: publicUser(user) };
+  return { token: issueToken(user), user: publicUser(user) };
 }
 
 export function me(user) {
   return publicUser(requireUser(user));
 }
 
-export function updateMe(user, { vehicle }) {
+export function updateMe(user, { vehicle } = {}) {
   requireUser(user);
-  if (vehicle && VEHICLES[vehicle]) user.vehicle = vehicle;
+  if (vehicle !== undefined && !VEHICLES[vehicle]) {
+    throw new ApiError('VALIDATION', 'Revisa los campos marcados.', 422, { fields: { vehicle: 'Vehículo no válido.' } });
+  }
+  if (vehicle) user.vehicle = vehicle;
   return publicUser(user);
 }

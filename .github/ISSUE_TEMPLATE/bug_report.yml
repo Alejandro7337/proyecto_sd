@@ -1,0 +1,61 @@
+name: Reporte de error
+description: Algo no funciona como debería en la app o el servidor.
+title: "[Error] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. **No incluyas contraseñas, tokens, datos de tarjetas ni datos personales reales.**
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options: [Conductor, Dueño de parqueadero, Anfitrión, Reservas / pagos (T0), Inicio de sesión, Servidor / API, Otra]
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidad
+      options:
+        - Bloqueante (no se puede reservar, cobro incorrecto, datos expuestos)
+        - Alta (un flujo principal falla, hay forma de evitarlo)
+        - Media (molesto, no bloquea)
+        - Baja (visual o de texto)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Inicia sesión como conductor@demo.test
+        2. Busca "Clínicas"
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas y qué pasó
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Plataforma y versión
+      placeholder: "Android 15 · Expo Go / web Chrome 131 / iOS 18"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Modo de la app
+      description: Se ve en Perfil (línea bajo «Prototipo»).
+      options: [Modo demo (mock), Modo real (HTTP), No sé]
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia
+      description: Capturas, código de reserva (TE-XXXX), hora aproximada o `requestId` del error del servidor.

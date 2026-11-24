@@ -1,8 +1,8 @@
 // Servicio: Panel del parqueadero y del anfitrión (cupos, tarifas, horarios, métricas, ingresos).
-import { getDb, findSpace, freeFor, usage, toSpaceDTO, toReservationDTO } from '../db';
+import { clock, getDb, findSpace, freeFor, nextId, usage, toSpaceDTO, toReservationDTO } from '../db';
 import { ApiError } from '../../errors';
 import { requireUser } from './auth';
-import { VEHICLES, COMMISSION_RATE, HOST_SPACE_TYPES } from '../../../domain/rules';
+import { VEHICLES, COMMISSION_RATE, DAY_OPTIONS, HOST_SPACE_TYPES } from '../../../domain/rules';
 import { isValidTime } from '../../../utils/format';
 
 function assertCanEdit(user, space) {
@@ -11,7 +11,7 @@ function assertCanEdit(user, space) {
   }
 }
 
-const sameDay = (iso) => new Date(iso).toDateString() === new Date().toDateString();
+const sameDay = (iso) => new Date(iso).toDateString() === new Date(clock.now()).toDateString();
 
 export function ownerSpace(user) {
   requireUser(user, 'owner');
@@ -58,8 +58,9 @@ function validateSpaceInput(input, space) {
     if (!fields['schedule.open'] && !fields['schedule.close'] && input.schedule.open >= input.schedule.close) {
       fields['schedule.close'] = 'El cierre debe ser después de la apertura.';
     }
-    if (!input.schedule.days) fields['schedule.days'] = 'Elige los días.';
+    if (!DAY_OPTIONS.includes(input.schedule.days)) fields['schedule.days'] = 'Elige los días.';
   }
+  if ('status' in input && !['published', 'paused'].includes(input.status)) fields.status = 'Estado no válido.';
   if (input.conditions && input.conditions.maxHeight !== null && input.conditions.maxHeight !== undefined) {
     const h = Number(input.conditions.maxHeight);
     if (!(h >= 1.5 && h <= 4)) fields['conditions.maxHeight'] = 'Entre 1,50 y 4,00 m, o déjalo vacío.';
@@ -106,6 +107,7 @@ export function adjustOccupancy(user, id, { vehicle, delta }) {
   const space = findSpace(id);
   assertCanEdit(user, space);
   if (!VEHICLES[vehicle]) throw new ApiError('VALIDATION', 'Vehículo no válido.', 422);
+  if (delta !== 1 && delta !== -1) throw new ApiError('VALIDATION', 'El ajuste debe ser +1 o -1.', 422);
   if (delta > 0 && freeFor(space, vehicle) <= 0) throw new ApiError('NO_FREE_SPOTS', 'No quedan cupos libres para registrar una entrada.', 409);
   if (delta < 0 && space.occupied[vehicle] <= 0) throw new ApiError('NOTHING_TO_RELEASE', 'No hay vehículos sin reserva para registrar salida.', 409);
   space.occupied[vehicle] += delta > 0 ? 1 : -1;
@@ -151,7 +153,7 @@ export function createHostSpace(user, input = {}) {
   const r = 0.45 + Math.random() * 0.3;
   const capacity = { car: Number(input.capacity.car), moto: Number(input.capacity.moto) };
   const space = {
-    id: 's-' + Date.now().toString(36),
+    id: nextId('s'),
     destinationId: input.destinationId,
     kind: 'particular',
     hostId: user.id,
@@ -163,7 +165,6 @@ export function createHostSpace(user, input = {}) {
     rates: normalizeRates(input.rates, capacity),
     capacity,
     occupied: { car: 0, moto: 0 },
-    held: { car: 0, moto: 0 },
     schedule: { ...input.schedule },
     conditions: {
       covered: !!input.conditions.covered,

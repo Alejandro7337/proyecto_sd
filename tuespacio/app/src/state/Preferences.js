@@ -1,37 +1,45 @@
 // Preferencias de interfaz del mockup: modo claro/oscuro e idioma.
-// Se guardan en memoria (en web también en localStorage si está disponible).
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+// Persisten en el dispositivo (web: localStorage, leído al instante; teléfono: SecureStore).
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { makeTones, palettes } from '../theme';
-import { translate } from '../i18n';
+import { LANGUAGES, translate } from '../i18n';
+import { readJSON, STORAGE_KEYS, writeJSON } from './storage';
 
 const PreferencesContext = createContext(null);
-const STORAGE_KEY = 'tuespacio.prefs';
+const DEFAULTS = { dark: false, language: 'es', notifications: true };
 
-function readStored() {
+// Descarta valores corruptos o de versiones anteriores.
+export function sanitizePrefs(raw) {
+  const p = raw && typeof raw === 'object' ? raw : {};
+  return {
+    dark: typeof p.dark === 'boolean' ? p.dark : DEFAULTS.dark,
+    language: LANGUAGES.some((l) => l.value === p.language) ? p.language : DEFAULTS.language,
+    notifications: typeof p.notifications === 'boolean' ? p.notifications : DEFAULTS.notifications,
+  };
+}
+
+function readWebSync() {
   try {
-    if (typeof localStorage === 'undefined') return {};
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (Platform.OS !== 'web' || typeof localStorage === 'undefined') return {};
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.prefs) || '{}');
   } catch {
     return {};
   }
 }
 
-function writeStored(value) {
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    // Sin almacenamiento: las preferencias viven mientras la app esté abierta.
-  }
-}
-
 export function PreferencesProvider({ children }) {
-  const [prefs, setPrefs] = useState(() => ({ dark: false, language: 'es', notifications: true, ...readStored() }));
+  const [prefs, setPrefs] = useState(() => sanitizePrefs(readWebSync()));
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    readJSON(STORAGE_KEYS.prefs).then((stored) => stored && setPrefs(sanitizePrefs(stored)));
+  }, []);
 
   const update = useCallback((patch) => {
     setPrefs((p) => {
-      const next = { ...p, ...patch };
-      writeStored(next);
+      const next = sanitizePrefs({ ...p, ...patch });
+      writeJSON(STORAGE_KEYS.prefs, next);
       return next;
     });
   }, []);

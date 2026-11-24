@@ -8,6 +8,7 @@ import { Button, Logo, Note, TextField, Txt } from '../components/ui';
 import { OfflineBanner } from '../components/layout';
 import { api } from '../api';
 import { describeError } from '../api/errors';
+import { isDemoMode } from '../api/transport';
 import { useApp } from '../state/AppContext';
 import { usePreferences, useStyles } from '../state/Preferences';
 import { ROLES } from '../domain/rules';
@@ -17,10 +18,12 @@ import { font, radius, space } from '../theme';
 const DEMO_EMAIL = { driver: 'conductor@demo.test', owner: 'parqueadero@demo.test', host: 'anfitrion@demo.test' };
 
 export default function Login() {
-  const { role = 'driver' } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  // Un enlace con un rol desconocido abre el login de conductor en lugar de fallar.
+  const role = ROLES[params.role] ? params.role : 'driver';
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn, offline } = useApp();
+  const { signIn, offline, sessionNotice } = useApp();
   const { colors: c, t } = usePreferences();
   const styles = useStyles(makeStyles);
   const [email, setEmail] = useState('');
@@ -105,6 +108,11 @@ export default function Login() {
             </Txt>
           </Pressable>
 
+          {sessionNotice && !formError ? (
+            <Note tone="warning" icon="time-outline" style={{ marginBottom: space.lg }}>
+              {sessionNotice}
+            </Note>
+          ) : null}
           {formError ? (
             <Note tone="danger" icon="alert-circle-outline" style={{ marginBottom: space.lg }}>
               {formError}
@@ -112,10 +120,14 @@ export default function Login() {
           ) : null}
 
           <Button title={t.signIn} iconRight="log-in-outline" onPress={submit} loading={loading} />
-          <Button title="Usar cuenta de prueba" variant="secondary" icon="person-circle-outline" onPress={fillDemo} style={{ marginTop: space.sm }} />
-          <Txt variant="small" style={{ textAlign: 'center', marginTop: space.md }}>
-            Cuenta demo: {DEMO_EMAIL[role]} · contraseña demo123
-          </Txt>
+          {isDemoMode ? (
+            <>
+              <Button title="Usar cuenta de prueba" variant="secondary" icon="person-circle-outline" onPress={fillDemo} style={{ marginTop: space.sm }} />
+              <Txt variant="small" style={{ textAlign: 'center', marginTop: space.md }}>
+                Cuenta demo: {DEMO_EMAIL[role]} · contraseña demo123
+              </Txt>
+            </>
+          ) : null}
         </View>
 
         <View style={{ marginTop: space.lg, gap: space.sm }}>
@@ -128,7 +140,7 @@ export default function Login() {
               El alta de parqueaderos formales se hace con el equipo comercial al contratar un plan (supuesto: no está documentado un registro autónomo).
             </Text>
           )}
-          <Text style={styles.footNote}>Autenticación simulada: no hay cuentas reales.</Text>
+          {isDemoMode ? <Text style={styles.footNote}>Modo demo: autenticación simulada, no hay cuentas reales.</Text> : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

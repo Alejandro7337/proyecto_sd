@@ -11,7 +11,9 @@ import { isValidEmail } from '../utils/format';
 import { space } from '../theme';
 
 export default function Register() {
-  const { role = 'driver' } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  // Solo conductores y anfitriones se registran solos (los parqueaderos los da de alta el equipo comercial).
+  const role = params.role === 'host' ? 'host' : 'driver';
   const router = useRouter();
   const { signIn, showToast } = useApp();
   const [form, setForm] = useState({ name: '', email: '', password: '', vehicle: role === 'driver' ? 'car' : undefined });

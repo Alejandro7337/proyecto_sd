@@ -1,0 +1,26 @@
+{
+  "name": "tu-espacio-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API REST de Tu Espacio: autenticación, catálogo, disponibilidad por franja, reservas (T0), pagos simulados y panel.",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch --env-file-if-exists=.env src/index.js",
+    "migrate": "node --env-file-if-exists=.env src/db/migrate.js",
+    "seed": "node --env-file-if-exists=.env src/db/seed.js",
+    "reset-demo": "node --env-file-if-exists=.env src/db/seed.js --reset",
+    "owner:create": "node --env-file-if-exists=.env scripts/create-owner.js",
+    "test": "node --test --test-concurrency=1 --env-file-if-exists=.env.test test/",
+    "lint": "node scripts/check-syntax.js"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  }
+}

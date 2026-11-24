@@ -9,6 +9,7 @@ import { useApp } from '../state/AppContext';
 import { usePreferences, useStyles } from '../state/Preferences';
 import { LANGUAGES } from '../i18n';
 import { VEHICLES } from '../domain/rules';
+import { isDemoMode } from '../api/transport';
 import { font, radius, space } from '../theme';
 import appConfig from '../../app.json';
 
@@ -81,8 +82,8 @@ export default function Settings() {
 
       <SettingsSection title={t.help} icon="help-circle-outline">
         <ListRow icon="help-circle-outline" label="Centro de ayuda" detail="Resuelve tus dudas" onPress={() => soon('Centro de ayuda')} />
-        <ListRow icon="shield-checkmark-outline" label="Privacidad y seguridad" detail="Controla tus datos" onPress={() => soon('Privacidad y seguridad')} />
-        <ListRow icon="flask-outline" label="Herramientas de demostración" detail="Solo prototipo" onPress={() => router.push('/demo')} last />
+        <ListRow icon="shield-checkmark-outline" label="Privacidad y seguridad" detail="Controla tus datos" onPress={() => soon('Privacidad y seguridad')} last={!isDemoMode} />
+        {isDemoMode ? <ListRow icon="flask-outline" label="Herramientas de demostración" detail="Solo modo demo" onPress={() => router.push('/demo')} last /> : null}
       </SettingsSection>
 
       <SettingsSection title={t.account} icon="lock-closed-outline">

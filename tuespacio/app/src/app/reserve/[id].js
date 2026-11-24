@@ -11,7 +11,8 @@ import { describeError } from '../../api/errors';
 import { faults, setFault } from '../../api/mock/demoControls';
 import { useApp } from '../../state/AppContext';
 import { useQuery } from '../../state/useQuery';
-import { ARRIVAL_OPTIONS, DURATION_OPTIONS, HOLD_MINUTES, VEHICLES, estimateCost } from '../../domain/rules';
+import { ARRIVAL_OPTIONS, DURATION_OPTIONS, HOLD_MINUTES, SCHEDULE_ISSUES, VEHICLES, estimateCost, scheduleIssue } from '../../domain/rules';
+import { isDemoMode } from '../../api/transport';
 import { formatCOP, formatDuration, formatTime } from '../../utils/format';
 import { font, radius, space } from '../../theme';
 import { useStyles, useTheme } from '../../state/Preferences';
@@ -23,6 +24,7 @@ const SIMULATIONS = [
   { value: 'taken', label: 'Cupo tomado' },
   { value: 'declined', label: 'Pago rechazado' },
   { value: 'timeout', label: 'Pasarela sin respuesta' },
+  { value: 'expired', label: 'Retención vencida' },
 ];
 
 export default function Reserve() {
@@ -58,9 +60,11 @@ export default function Reserve() {
   // eslint-disable-next-line react-hooks/purity
   const startAt = new Date(Date.now() + arrival * 60000);
   const endAt = new Date(startAt.getTime() + duration * 60000);
+  // Misma regla que aplica el servidor: se avisa antes de enviar en lugar de fallar después.
+  const outsideSchedule = scheduleIssue(s.schedule, startAt, endAt);
 
   const submit = async () => {
-    setFault('nextReservation', simulation);
+    if (isDemoMode) setFault('nextReservation', simulation);
     setPhase('processing');
     setStep(0);
     setFailure(null);
@@ -80,7 +84,7 @@ export default function Reserve() {
     } catch (e) {
       clearInterval(timer.current);
       // Un fallo de red puede reintentarse con la misma llave; un aborto definitivo usa una nueva.
-      if (e.code !== 'NETWORK') idemKey.current = newIdempotencyKey();
+      if (e.code !== 'NETWORK' && e.code !== 'TIMEOUT') idemKey.current = newIdempotencyKey();
       setSimulation('none');
       setFailure(e);
       setPhase('error');
@@ -161,7 +165,7 @@ export default function Reserve() {
           title={`Reservar y pagar ${formatCOP(amount)}`}
           icon="lock-closed-outline"
           onPress={submit}
-          disabled={s.availability[vehicle].free <= 0 && simulation === 'none'}
+          disabled={!!outsideSchedule || (s.availability[vehicle].free <= 0 && simulation === 'none')}
         />
       }
     >
@@ -200,6 +204,11 @@ export default function Reserve() {
       <Txt variant="small" style={{ marginTop: space.sm }}>
         Cupo apartado de {formatTime(startAt)} a {formatTime(endAt)}.
       </Txt>
+      {outsideSchedule ? (
+        <Note tone="danger" icon="time-outline" style={{ marginTop: space.md }}>
+          {SCHEDULE_ISSUES[outsideSchedule]} Horario: {s.schedule.days} {s.schedule.open} – {s.schedule.close}.
+        </Note>
+      ) : null}
 
       <SectionTitle title="Resumen" />
       <Card>
@@ -212,7 +221,7 @@ export default function Reserve() {
           <Ionicons name="card-outline" size={20} color={colors.accent} />
           <View style={{ flex: 1 }}>
             <Txt>Medio de pago de prueba •••• 4242</Txt>
-            <Txt variant="small">Simulado. No se realiza ningún cobro real.</Txt>
+            <Txt variant="small">{isDemoMode ? 'Simulado. No se realiza ningún cobro real.' : 'Medios de pago reales: pendientes de integrar (docs/PENDING_BUSINESS_DECISIONS.md).'}</Txt>
           </View>
         </View>
       </Card>
@@ -220,6 +229,7 @@ export default function Reserve() {
         Supuestos del prototipo: el cálculo por hora iniciada, las opciones de llegada y duración, y los medios de pago reales están por definir.
       </Note>
 
+      {isDemoMode ? (
       <View style={styles.sim}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.sm }}>
           <Ionicons name="flask-outline" size={16} color={colors.textMuted} />
@@ -231,6 +241,7 @@ export default function Reserve() {
           ))}
         </View>
       </View>
+      ) : null}
     </Screen>
   );
 }

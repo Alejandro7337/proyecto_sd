@@ -22,6 +22,7 @@ const STREETS = [
 ];
 
 const shortPrice = (rate) => {
+  if (!rate) return '—';
   const p = rate.price >= 1000 ? (rate.price / 1000).toFixed(1).replace('.0', '').replace('.', ',') + ' mil' : rate.price;
   return '$' + p + RATE_UNITS[rate.unit].short;
 };

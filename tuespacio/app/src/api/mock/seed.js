@@ -11,8 +11,8 @@ const hour = (price) => ({ unit: 'hour', price });
 export function createSeed() {
   const users = [
     { id: 'u-driver', role: 'driver', name: 'Laura Gómez', email: 'conductor@demo.test', password: 'demo123', vehicle: 'car' },
-    // Cuenta demo del mockup de diseño.
-    { id: 'u-juan', role: 'driver', name: 'Juan Manuel', email: 'juan@tuespacio.co', password: 'TuEspacio2026!', vehicle: 'car' },
+    // Cuenta demo del mockup de diseño. Dominio reservado .test: nunca coincide con un correo real.
+    { id: 'u-juan', role: 'driver', name: 'Juan Manuel', email: 'juan@demo.test', password: 'TuEspacio2026!', vehicle: 'car' },
     { id: 'u-owner', role: 'owner', name: 'Carlos Pérez', email: 'parqueadero@demo.test', password: 'demo123', plan: 'Destacado' },
     { id: 'u-host', role: 'host', name: 'Marta Rincón', email: 'anfitrion@demo.test', password: 'demo123', identity: 'pending' },
     { id: 'u-host2', role: 'host', name: 'Jorge Medina', email: 'jorge@demo.test', password: 'demo123', identity: 'pending' },
@@ -25,10 +25,7 @@ export function createSeed() {
     { id: 'd-cli', name: 'Zona de Clínicas · Norte', hint: 'Clínicas y consultorios médicos' },
   ];
 
-  const base = {
-    status: 'published',
-    held: { car: 0, moto: 0 },
-  };
+  const base = { status: 'published' };
 
   const spaces = [
     // Zona Empresarial
@@ -149,5 +146,5 @@ export function createSeed() {
     reservation('r-1008', 's-uni-3', 'Camila S.', 'u-other', 'moto', 180, 120, 'confirmed', 'TE-6WJ9'),
   ];
 
-  return { users, destinations, spaces, reservations, idempotency: {}, txLog: [] };
+  return { users, destinations, spaces, reservations, holds: [], idempotency: {}, revokedTokens: [], txLog: [] };
 }

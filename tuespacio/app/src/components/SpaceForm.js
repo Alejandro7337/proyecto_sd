@@ -5,11 +5,10 @@ import { View } from 'react-native';
 import { Button, Card, Chip, Note, Segmented, SectionTitle, SwitchRow, TextField, Txt } from './ui';
 import { VehicleIcon } from './parking';
 import { describeError } from '../api/errors';
-import { HOST_SPACE_TYPES, VEHICLES } from '../domain/rules';
+import { DAY_OPTIONS, HOST_SPACE_TYPES, VEHICLES } from '../domain/rules';
 import { space } from '../theme';
 import { useTheme } from '../state/Preferences';
 
-const DAY_OPTIONS = ['Lun – Vie', 'Lun – Sáb', 'Todos los días'];
 
 const toForm = (s) => ({
   name: s?.name || '',

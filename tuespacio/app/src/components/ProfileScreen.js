@@ -8,7 +8,7 @@ import { Button, Card, ListRow, Note, SettingsSection, SwitchRow, Txt } from './
 import { useApp } from '../state/AppContext';
 import { usePreferences, useStyles } from '../state/Preferences';
 import { ROLES } from '../domain/rules';
-import { apiMode } from '../api/transport';
+import { isDemoMode } from '../api/transport';
 import { font, radius, space } from '../theme';
 
 const initials = (name) =>
@@ -56,6 +56,7 @@ export function ProfileScreen({ children }) {
 
       {children}
 
+      {isDemoMode ? (
       <SettingsSection title="Prototipo" icon="flask-outline">
         <View style={{ paddingHorizontal: space.lg }}>
           <SwitchRow
@@ -66,10 +67,11 @@ export function ProfileScreen({ children }) {
             onValueChange={setOffline}
           />
         </View>
-        <ListRow icon="construct-outline" label="Herramientas de demostración" detail="Fallas, red lenta y registro de T0" onPress={() => router.push('/demo')} last />
+        <ListRow icon="construct-outline" label="Herramientas de demostración" detail="Escenarios guiados, fallas y registro de T0" onPress={() => router.push('/demo')} last />
       </SettingsSection>
+      ) : null}
       <Txt variant="small" style={{ marginTop: space.sm, paddingHorizontal: 4 }}>
-        Backend: {apiMode === 'mock' ? 'simulado dentro de la app' : 'HTTP'} · Los datos son ficticios.
+        {isDemoMode ? 'Modo demo: backend simulado dentro de la app · datos ficticios · sin cobros reales.' : 'Conectado al servidor de Tu Espacio.'}
       </Txt>
 
       <Card flat style={{ marginTop: space.xl, flexDirection: 'row', gap: space.md }}>

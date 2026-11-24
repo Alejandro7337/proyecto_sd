@@ -3,16 +3,30 @@
     "name": "Tu Espacio",
     "slug": "tu-espacio",
     "scheme": "tuespacio",
-    "version": "0.1.0",
+    "version": "0.2.0",
+    "description": "Encuentra y reserva parqueadero por destino, con cupo, tarifa y condiciones antes de salir.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "runtimeVersion": { "policy": "appVersion" },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "co.tuespacio.prototipo"
+      "bundleIdentifier": "co.tuespacio.prototipo",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "co.tuespacio.prototipo",
+      "versionCode": 1,
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0B2545",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -21,11 +35,25 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Tu Espacio",
+      "shortName": "Tu Espacio",
+      "themeColor": "#0B2545",
+      "backgroundColor": "#0B2545"
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B2545"
+        }
+      ]
     ]
   }
 }

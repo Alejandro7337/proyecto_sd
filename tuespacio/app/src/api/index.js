@@ -12,6 +12,7 @@ export const api = {
   // Autenticación y usuarios
   login: (email, password, role) => request('POST', '/auth/login', { email, password, role }),
   register: (data) => request('POST', '/auth/register', data),
+  logout: () => request('POST', '/auth/logout'),
   me: () => request('GET', '/me'),
   updateMe: (data) => request('PATCH', '/me', data),
 
@@ -41,7 +42,10 @@ export const api = {
 
   // Solo prototipo
   demoTransactions: () => request('GET', '/demo/transactions'),
+  demoScenario: (name) => request('POST', `/demo/scenarios/${name}`),
 };
 
+// Una llave por intento de reserva. Se conserva si la red falla (el reintento no duplica el cobro)
+// y se renueva tras un rechazo definitivo.
 export const newIdempotencyKey = () =>
-  'idem-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  'idem-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);

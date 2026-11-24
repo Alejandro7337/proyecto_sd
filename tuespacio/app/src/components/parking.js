@@ -133,7 +133,7 @@ export function SpaceCard({ space: s, vehicle, onPress, selected }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${s.name}, ${formatCOP(rate.price)} ${RATE_UNITS[rate.unit].label}, a ${formatDistance(s.distanceM)}`}
+      accessibilityLabel={`${s.name}, ${rate ? `${formatCOP(rate.price)} ${RATE_UNITS[rate.unit].label}` : 'no recibe este vehículo'}, a ${formatDistance(s.distanceM)}`}
       accessibilityState={{ selected: !!selected }}
       android_ripple={{ color: c.surfacePressed }}
       style={({ pressed }) => [styles.spaceCard, selected && styles.spaceCardSelected, pressed && !selected && { backgroundColor: c.surface }]}
@@ -156,8 +156,8 @@ export function SpaceCard({ space: s, vehicle, onPress, selected }) {
         <View style={styles.cardBottom}>
           <View>
             <Text style={[styles.price, dim && { color: c.textMuted }]}>
-              {formatCOP(rate.price)}
-              <Text style={styles.priceUnit}>{RATE_UNITS[rate.unit].short}</Text>
+              {rate ? formatCOP(rate.price) : '—'}
+              {rate ? <Text style={styles.priceUnit}>{RATE_UNITS[rate.unit].short}</Text> : null}
             </Text>
             <Text style={styles.cardMeta}>a {formatDistance(s.distanceM)} de tu destino</Text>
           </View>

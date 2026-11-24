@@ -7,6 +7,7 @@ import { font, radius, space } from '../theme';
 import { useApp } from '../state/AppContext';
 import { useStyles, useTheme } from '../state/Preferences';
 import { Logo } from './ui';
+import { isDemoMode } from '../api/transport';
 
 export function Screen({ children, header, footer, scroll = true, onRefresh, refreshing = false, contentStyle, safeTop = true, style }) {
   const insets = useSafeAreaInsets();
@@ -52,9 +53,12 @@ export function Header({ title, subtitle, back, onBack, right }) {
       ) : null}
       <Logo size={40} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.brand} numberOfLines={1}>
-          Tu Espacio
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={styles.brand} numberOfLines={1}>
+            Tu Espacio
+          </Text>
+          {isDemoMode ? <DemoTag /> : null}
+        </View>
         <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
           {title}
         </Text>
@@ -69,6 +73,16 @@ export function Header({ title, subtitle, back, onBack, right }) {
   );
 }
 
+// Etiqueta visible en todas las pantallas del modo demo: los datos no son reales.
+export function DemoTag() {
+  const styles = useStyles(makeStyles);
+  return (
+    <View style={styles.demoTag} accessible accessibilityLabel="Modo demostración: datos ficticios, sin cobros reales">
+      <Text style={styles.demoTagText}>Demo</Text>
+    </View>
+  );
+}
+
 export function OfflineBanner() {
   const { setOffline } = useApp();
   const c = useTheme();
@@ -77,7 +91,7 @@ export function OfflineBanner() {
     <View style={styles.offline}>
       <Ionicons name="cloud-offline-outline" size={16} color={c.white} />
       <Text style={styles.offlineText}>Sin conexión (simulada). Los cambios no se pueden enviar.</Text>
-      <Pressable onPress={() => setOffline(false)} hitSlop={8}>
+      <Pressable onPress={() => setOffline(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Reconectar">
         <Text style={[styles.offlineText, { fontWeight: '800', textDecorationLine: 'underline' }]}>Reconectar</Text>
       </Pressable>
     </View>
@@ -116,4 +130,6 @@ const makeStyles = (c) => ({
     paddingVertical: 10,
   },
   offlineText: { color: c.white, fontSize: font.xs, flexShrink: 1 },
+  demoTag: { borderWidth: 1, borderColor: c.warning, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 0 },
+  demoTagText: { fontSize: 9, fontWeight: '900', color: c.warning, letterSpacing: 1, textTransform: 'uppercase' },
 });

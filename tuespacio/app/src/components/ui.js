@@ -386,7 +386,7 @@ export const makeStyles = (c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: 16,
     borderRadius: radius.pill,
     borderWidth: 1,
@@ -401,7 +401,7 @@ export const makeStyles = (c) => ({
   segmented: { flexDirection: 'row', gap: space.sm },
   segment: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,

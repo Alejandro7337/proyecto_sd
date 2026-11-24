@@ -1,0 +1,6 @@
+{
+  "name": "@tuespacio/domain",
+  "private": true,
+  "type": "module",
+  "description": "Reglas de negocio puras compartidas por la app (UI y backend simulado) y por el servidor Node."
+}

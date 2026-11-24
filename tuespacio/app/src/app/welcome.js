@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Logo } from '../components/ui';
+import { isDemoMode } from '../api/transport';
 import { useStyles, useTheme } from '../state/Preferences';
 import { font, radius, space } from '../theme';
 
@@ -56,16 +57,18 @@ export default function Welcome() {
 
         <View style={{ flex: 1 }} />
         <View style={styles.links}>
-          <Pressable onPress={() => router.push('/demo')} style={styles.demoLink} hitSlop={8} accessibilityRole="link">
-            <Ionicons name="flask-outline" size={15} color="rgba(255,255,255,0.7)" {...hidden} />
-            <Text style={styles.demoText}>Herramientas de demo</Text>
-          </Pressable>
+          {isDemoMode ? (
+            <Pressable onPress={() => router.push('/demo')} style={styles.demoLink} hitSlop={8} accessibilityRole="link">
+              <Ionicons name="flask-outline" size={15} color="rgba(255,255,255,0.7)" {...hidden} />
+              <Text style={styles.demoText}>Presentación guiada y herramientas de demo</Text>
+            </Pressable>
+          ) : null}
           <Pressable onPress={() => router.push('/settings')} style={styles.demoLink} hitSlop={8} accessibilityRole="link">
             <Ionicons name="settings-outline" size={15} color="rgba(255,255,255,0.7)" {...hidden} />
             <Text style={styles.demoText}>Apariencia e idioma</Text>
           </Pressable>
         </View>
-        <Text style={[styles.demoText, { textAlign: 'center' }]}>Prototipo con datos simulados</Text>
+        <Text style={[styles.demoText, { textAlign: 'center' }]}>{isDemoMode ? 'Modo demo · datos ficticios · sin cobros reales' : ''}</Text>
       </ScrollView>
     </View>
   );

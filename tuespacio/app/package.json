@@ -8,8 +8,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "lint": "eslint src __tests__ scripts",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage",
     "check": "expo export --platform android --output-dir dist",
-    "lint": "eslint src"
+    "export:web": "expo export --platform web --output-dir dist-web",
+    "export:android": "expo export --platform android --output-dir dist",
+    "doctor": "npx expo-doctor",
+    "env:check": "node scripts/check-env.js",
+    "verify": "npm run env:check && npm run lint && npm test -- --ci && npm run export:android && npm run export:web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -18,16 +25,39 @@
     "expo-font": "~58.0.10",
     "expo-linking": "~58.0.14",
     "expo-router": "~58.0.26",
+    "expo-secure-store": "~58.0.3",
+    "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~58.0.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-native": "0.88.0",
-    "react-native-safe-area-context": "~5.10.1",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.0",
     "react-native-web": "^0.21.4"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~58.0.4"
+    "eslint-config-expo": "~58.0.4",
+    "globals": "^16.5.0",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.15"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "<rootDir>/__tests__/**/*.test.js"
+    ],
+    "globalSetup": "<rootDir>/__tests__/support/globalSetup.js",
+    "setupFilesAfterEnv": [
+      "<rootDir>/__tests__/support/setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageReporters": [
+      "text-summary",
+      "lcov"
+    ]
   }
 }
