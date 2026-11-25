@@ -11,9 +11,10 @@ import { estimateCost, HOLD_MINUTES, VEHICLES, COMMISSION_RATE } from '../../../
 import { formatTime } from '../../../utils/format';
 
 const STEP_MS = 280;
+const inFlight = new Map();
 
 function beginTx(meta) {
-  const tx = { id: 'tx_' + Date.now().toString(36), startedAt: new Date().toISOString(), outcome: 'running', meta, steps: [] };
+  const tx = { id: 'tx_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), startedAt: new Date().toISOString(), outcome: 'running', meta, steps: [] };
   getDb().txLog.unshift(tx);
   return {
     log: (step, status, detail) => tx.steps.push({ step, status, detail, at: new Date().toISOString() }),
@@ -36,19 +37,33 @@ const randomCode = () => 'TE-' + Math.random().toString(36).slice(2, 6).toUpperC
 
 export async function createReservation(user, body = {}) {
   requireUser(user, 'driver');
+  const scope = `${user.id}:${body.idempotencyKey}`;
+  const signature = JSON.stringify([body.spaceId, body.vehicle, body.startAt, body.durationMin, body.expectedAmount]);
+  const completed = getDb().idempotency[scope];
+  const running = inFlight.get(scope);
+  if ((completed && completed.signature !== signature) || (running && running.signature !== signature)) {
+    throw new ApiError('IDEMPOTENCY_CONFLICT', 'Esta llave ya fue usada con otros datos.', 409);
+  }
+  if (completed) return toReservationDTO(findReservation(completed.id));
+  if (running) return running.promise;
+  const promise = performReservation(user, body, scope, signature).finally(() => inFlight.delete(scope));
+  inFlight.set(scope, { signature, promise });
+  return promise;
+}
+
+async function performReservation(user, body, scope, signature) {
+  requireUser(user, 'driver');
   const { spaceId, vehicle, startAt, durationMin, idempotencyKey } = body;
-  if (!spaceId || !VEHICLES[vehicle] || !(durationMin > 0) || !startAt || !idempotencyKey) {
+  if (!spaceId || !VEHICLES[vehicle] || !Number.isInteger(durationMin) || durationMin < 15 || durationMin > 480 || typeof startAt !== 'string' || !Number.isFinite(new Date(startAt).getTime()) || !idempotencyKey) {
     throw new ApiError('VALIDATION', 'Datos de reserva incompletos.', 422);
   }
   const db = getDb();
-
-  // Idempotencia: un reintento con la misma llave devuelve la reserva ya creada.
-  if (db.idempotency[idempotencyKey]) return toReservationDTO(findReservation(db.idempotency[idempotencyKey]));
 
   const space = findSpace(spaceId);
   if (space.status !== 'published') throw new ApiError('SPACE_UNAVAILABLE', 'Este espacio no está publicado ahora.', 409);
   const rate = space.rates[vehicle];
   if (!rate || !space.capacity[vehicle]) throw new ApiError('VEHICLE_NOT_ACCEPTED', 'Este espacio no recibe ese tipo de vehículo.', 422);
+  if (body.expectedAmount !== undefined && body.expectedAmount !== estimateCost(rate, durationMin)) throw new ApiError('PRICE_CHANGED', 'La tarifa cambió. Actualiza y revisa el nuevo total.', 409);
 
   const fault = faults.nextReservation;
   faults.nextReservation = 'none';
@@ -73,8 +88,7 @@ export async function createReservation(user, body = {}) {
   }
   tx.log('T11', 'ok', `Cupo libre verificado (${freeFor(space, vehicle)} disponibles)`);
 
-  // T12 · Bloquear el cupo con retención temporal
-  await delay(STEP_MS);
+  // La comprobación y el incremento deben ocurrir en el mismo turno, sin await.
   space.held[vehicle] += 1;
   const holdUntil = new Date(Date.now() + HOLD_MINUTES * 60000).toISOString();
   tx.log('T12', 'ok', `Cupo retenido hasta las ${formatTime(holdUntil)} (${HOLD_MINUTES} min)`);
@@ -116,7 +130,7 @@ export async function createReservation(user, body = {}) {
   releaseHold();
   const start = new Date(startAt);
   const reservation = {
-    id: 'r-' + Date.now().toString(36),
+    id: 'r-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     code: randomCode(),
     spaceId,
     driverId: user.id,
@@ -131,7 +145,7 @@ export async function createReservation(user, body = {}) {
     checkInAt: null,
   };
   db.reservations.unshift(reservation);
-  db.idempotency[idempotencyKey] = reservation.id;
+  db.idempotency[scope] = { id: reservation.id, signature };
   tx.log('T13', 'ok', `Reserva ${reservation.code} confirmada`);
   tx.log('async', 'info', 'Notificaciones y actualización del panel fuera de T0');
   tx.end('committed');

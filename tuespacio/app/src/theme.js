@@ -2,9 +2,10 @@
 // acento celeste (#3FA2FF), tarjetas blancas muy redondeadas y tipografía de peso alto.
 // Dos paletas (clara y oscura) con la misma forma: las pantallas leen `useTheme()`.
 const brand = {
-  navy: '#0B2545',
-  navySoft: '#1E3A64',
-  accent: '#3FA2FF',
+  navy: '#142F2D',
+  navySoft: '#2C4843',
+  accent: '#246249',
+  onBrandAccent: '#D8EDB5',
   white: '#FFFFFF',
 };
 
@@ -16,15 +17,15 @@ const light = {
   actionPressed: brand.navySoft,
   onAction: brand.white,
   // Enlaces y estados "info": azul con contraste ≥ 4.5:1 sobre blanco.
-  primary: '#1F6FD1',
-  primarySoft: '#EEF7FF',
+  primary: '#246249',
+  primarySoft: '#EDF4E8',
 
-  bg: '#FFFFFF',
+  bg: '#F6F7F5',
   card: '#FFFFFF',
-  surface: '#F4F6F9',
-  surfacePressed: '#E9EDF3',
-  border: '#E4E9F0',
-  borderStrong: '#CBD3DE',
+  surface: '#EEF1ED',
+  surfacePressed: '#E4EAE1',
+  border: '#E1E7DF',
+  borderStrong: '#C5D2C3',
   heading: brand.navy,
   text: '#0F1B2D',
   textMuted: '#475569',
@@ -51,13 +52,14 @@ const light = {
 
 const dark = {
   ...brand,
+  accent: '#BBDCA0',
   dark: true,
   // En oscuro el marino pierde contraste: la acción pasa al acento con texto marino.
-  action: brand.accent,
-  actionPressed: '#2C8CE6',
+  action: '#BBDCA0',
+  actionPressed: '#CDE8B6',
   onAction: brand.navy,
-  primary: '#6CB8FF',
-  primarySoft: 'rgba(63,162,255,0.16)',
+  primary: '#BBDCA0',
+  primarySoft: '#263B2C',
 
   bg: '#07101D',
   card: '#0F1A2B',
@@ -103,7 +105,7 @@ export const makeTones = (c) => ({
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };
 
 // rounded-xl · rounded-2xl · rounded-3xl · rounded-[28px] del mockup.
-export const radius = { sm: 12, md: 16, lg: 24, xl: 28, pill: 999 };
+export const radius = { sm: 8, md: 12, lg: 16, xl: 20, pill: 999 };
 
 export const font = {
   xs: 12,

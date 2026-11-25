@@ -1,0 +1,1270 @@
+--- before/.dockerignore
++++ after/.dockerignore
+@@ -1,5 +1,8 @@
+ app/
+ documentos/
+ .runtime/
+ **/__pycache__/
+ artifacts/
++
++.env*
++!.env.example
+--- before/.env.example
++++ after/.env.example
+@@ -13,8 +13,11 @@
+ APP_PUBLIC_URL=
+ 
+ RECEIPT_SELLER_NAME='Tu Espacio'
+ RECEIPT_SELLER_TAX_ID=
+ 
+ # Desarrollo: Photon público, sólo búsquedas explícitas y con caché.
+ # Producción: endpoint Photon propio o proveedor compatible con SLA.
+ GEOCODER_URL=https://photon.komoot.io/api/
++
++# Sólo para compose.production.yaml: dominio DNS del comercio, sin https://.
++PUBLIC_HOST=
+--- before/Caddyfile
++++ after/Caddyfile
+@@ -0,0 +1,5 @@
++{$PUBLIC_HOST} {
++    encode zstd gzip
++    header Strict-Transport-Security "max-age=31536000"
++    reverse_proxy app:8080
++}
+--- before/app/scripts/mock.test.mjs
++++ after/app/scripts/mock.test.mjs
+@@ -1,8 +1,9 @@
++import { toForm, toPayload } from '../src/domain/spaceForm.js';
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+ import { createReservation } from '../src/api/mock/services/reservations.js';
+ import { getDb, resetDb, freeFor } from '../src/api/mock/db.js';
+ import { faults } from '../src/api/mock/demoControls.js';
+ import { reservationStatus, reservationTab, openReservation } from '../src/domain/rules.js';
+ 
+ const body = (key, patch = {}) => ({ spaceId: 's-emp-4', vehicle: 'car', startAt: new Date(Date.now() + 900000).toISOString(), durationMin: 60, idempotencyKey: key, ...patch });
+@@ -85,8 +86,31 @@
+   }
+   for (const status of ['future_backend_status', null, undefined, 'toString', '__proto__']) {
+     const meta = reservationStatus(status);
+     assert.equal(meta.label, 'Estado por actualizar');
+     assert.equal(meta.tone, 'neutral');
+     assert.equal(reservationTab(status), 'current');
+   }
+ });
++
++test('el alta móvil envía estado y coordenadas completas para el contrato HTTP', () => {
++  const form = toForm(null);
++  form.name = 'Garaje de prueba'; form.address = 'Calle 100 # 10-20';
++  form.capacity.car = '1'; form.rates.car.price = '5000';
++  form.latitude = '4,656'; form.longitude = '-74.060';
++  form.identityConsent = true;
++  const payload = toPayload(form, 'create');
++  assert.equal(payload.status, 'published');
++  assert.deepEqual(payload.location, {lat: 4.656, lon: -74.06});
++  assert.equal(payload.identityConsent, true);
++  assert.equal(payload.rates.car.price, 5000);
++  assert.ok(payload.destinationId);
++});
++
++test('el formulario conserva coordenadas al editar y rechaza ubicaciones incompletas o fuera de rango', () => {
++  const form = toForm({location: {lat: -23.55, lon: -46.63}, status: 'paused'});
++  assert.deepEqual(toPayload(form, 'host-edit').location, {lat: -23.55, lon: -46.63});
++  assert.equal(toPayload(form, 'host-edit').status, 'paused');
++  for (const location of [{latitude:'',longitude:''},{latitude:'NaN',longitude:'0'},{latitude:'91',longitude:'0'},{latitude:'0',longitude:'181'},{latitude:'0',longitude:''}]) {
++    assert.throws(() => toPayload({...form,...location}, 'create'), error => error.code === 'VALIDATION' && Object.keys(error.details.fields).length > 0);
++  }
++});
+--- before/app/src/app/host-space/[id].js
++++ after/app/src/app/host-space/[id].js
+@@ -11,35 +11,34 @@
+   const { id } = useLocalSearchParams();
+   const isNew = id === 'new';
+   const router = useRouter();
+   const { invalidate, showToast } = useApp();
+   const destinations = useQuery(() => api.searchDestinations(''), []);
+   const existing = useQuery(() => api.getSpace(id), [id], { enabled: !isNew });
+ 
+   const submit = async (payload) => {
+-    if (isNew) await api.createHostSpace(payload);
+-    else await api.updateSpace(id, payload);
++    const result = isNew ? await api.createHostSpace(payload) : await api.updateSpace(id, payload);
+     invalidate();
+-    showToast(isNew ? 'Espacio publicado. Ya aparece en el mapa.' : 'Cambios guardados');
++    showToast(isNew ? (result.status === 'published' ? 'Espacio publicado' : 'Espacio enviado a revisión') : 'Cambios guardados');
+     router.back();
+   };
+ 
+   const ready = destinations.data && (isNew || existing.data);
+   const failed = destinations.error || existing.error;
+ 
+   return (
+     <Screen header={<Header back title={isNew ? 'Publicar espacio' : 'Editar espacio'} subtitle={isNew ? 'Espacio particular' : existing.data?.name} />}>
+       {ready ? (
+         <SpaceForm
+           initial={isNew ? null : existing.data}
+           mode={isNew ? 'create' : 'host-edit'}
+           destinations={destinations.data}
+           onSubmit={submit}
+-          submitLabel={isNew ? 'Publicar en el mapa' : 'Guardar cambios'}
++          submitLabel={isNew ? 'Enviar espacio' : 'Guardar cambios'}
+         />
+       ) : failed ? (
+         <ErrorState error={failed} onRetry={() => (destinations.error ? destinations.reload() : existing.reload())} />
+       ) : (
+         <LoadingState />
+       )}
+     </Screen>
+   );
+--- before/app/src/components/SpaceForm.js
++++ after/app/src/components/SpaceForm.js
+@@ -1,69 +1,22 @@
+ // Formulario de espacio: lo usan el dueño (editar su parqueadero) y el anfitrión
+ // (publicar o editar un garaje/lote). La validación autoritativa la hace el backend.
+ import { useEffect, useMemo, useState } from 'react';
+ import { View } from 'react-native';
+ import { Button, Card, Chip, Note, Segmented, SectionTitle, SwitchRow, TextField, Txt } from './ui';
+ import { VehicleIcon } from './parking';
+ import { describeError } from '../api/errors';
+ import { HOST_SPACE_TYPES, VEHICLES } from '../domain/rules';
++import { toForm, toPayload, digits } from '../domain/spaceForm';
+ import { space } from '../theme';
+ import { useTheme } from '../state/Preferences';
+ 
+ const DAY_OPTIONS = ['Lun – Vie', 'Lun – Sáb', 'Todos los días'];
+ 
+-const toForm = (s) => ({
+-  name: s?.name || '',
+-  address: s?.address || '',
+-  destinationId: s?.destinationId || null,
+-  hostType: s?.hostType || null,
+-  capacity: { car: String(s?.capacity?.car ?? 0), moto: String(s?.capacity?.moto ?? 0) },
+-  rates: {
+-    car: { unit: s?.rates?.car?.unit || 'hour', price: s?.rates?.car ? String(s.rates.car.price) : '' },
+-    moto: { unit: s?.rates?.moto?.unit || 'hour', price: s?.rates?.moto ? String(s.rates.moto.price) : '' },
+-  },
+-  schedule: { open: s?.schedule?.open || '07:00', close: s?.schedule?.close || '19:00', days: s?.schedule?.days || 'Lun – Vie' },
+-  conditions: {
+-    covered: !!s?.conditions?.covered,
+-    keys: !!s?.conditions?.keys,
+-    maxHeight: s?.conditions?.maxHeight ? String(s.conditions.maxHeight).replace('.', ',') : '',
+-  },
+-  published: s ? s.status === 'published' : true,
+-  identityConsent: false,
+-});
+-
+-const digits = (v) => v.replace(/[^\d]/g, '');
+-
+-function toPayload(f, mode) {
+-  const capacity = { car: Number(digits(f.capacity.car) || 0), moto: Number(digits(f.capacity.moto) || 0) };
+-  const rates = {};
+-  Object.keys(VEHICLES).forEach((v) => {
+-    rates[v] = capacity[v] > 0 ? { unit: f.rates[v].unit, price: Number(digits(f.rates[v].price) || 0) } : null;
+-  });
+-  const h = f.conditions.maxHeight.trim().replace(',', '.');
+-  const payload = {
+-    capacity,
+-    rates,
+-    schedule: { ...f.schedule, open: f.schedule.open.trim(), close: f.schedule.close.trim() },
+-    conditions: { covered: f.conditions.covered, keys: f.conditions.keys, maxHeight: h ? Number(h) : null },
+-  };
+-  if (mode === 'create' || mode === 'host-edit') {
+-    payload.name = f.name;
+-    payload.address = f.address;
+-  }
+-  if (mode === 'create') {
+-    payload.destinationId = f.destinationId;
+-    payload.hostType = f.hostType;
+-    payload.identityConsent = f.identityConsent;
+-  } else {
+-    payload.status = f.published ? 'published' : 'paused';
+-  }
+-  return payload;
+-}
+ 
+ export function SpaceForm({ initial, mode, destinations = [], onSubmit, submitLabel }) {
+   const startKey = useMemo(() => JSON.stringify(toForm(initial)), [initial]);
+   const [f, setF] = useState(() => JSON.parse(startKey));
+   const [errors, setErrors] = useState({});
+   const [formError, setFormError] = useState(null);
+   const [saving, setSaving] = useState(false);
+   const dirty = JSON.stringify(f) !== startKey;
+@@ -107,16 +60,18 @@
+     <View>
+       {isHost ? (
+         <>
+           <TextField label="Nombre visible" value={f.name} onChangeText={(v) => set('name', v)} error={errors.name} placeholder="Ej.: Garaje cubierto cerca al metro" />
+           <TextField label="Dirección" value={f.address} onChangeText={(v) => set('address', v)} error={errors.address} placeholder="Calle, carrera y número" />
+         </>
+       ) : null}
+ 
++      <TextField label="Latitud" value={f.latitude} onChangeText={(v) => set('latitude', v)} error={errors.latitude} placeholder="4.656" helper="Coordenada exacta del acceso al parqueadero, entre -90 y 90." />
++      <TextField label="Longitud" value={f.longitude} onChangeText={(v) => set('longitude', v)} error={errors.longitude} placeholder="-74.060" helper="Coordenada exacta del acceso al parqueadero, entre -180 y 180." />
+       {mode === 'create' ? (
+         <>
+           <Txt variant="title" style={{ fontSize: 14, marginBottom: 6 }}>
+             Zona
+           </Txt>
+           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+             {destinations.map((d) => (
+               <Chip key={d.id} label={d.name} selected={f.destinationId === d.id} onPress={() => set('destinationId', d.id)} />
+@@ -225,24 +180,24 @@
+           </Card>
+         </>
+       ) : (
+         <>
+           <SectionTitle title="Verificación de identidad" />
+           <Card>
+             <SwitchRow
+               label="Inicio mi verificación de identidad"
+-              description="Requisito obligatorio para publicar. El proceso real está por definir con el área legal; aquí se simula."
++              description="Solicita la revisión de identidad y del espacio. La publicación requiere aprobación de administración."
+               value={f.identityConsent}
+               onValueChange={(v) => set('identityConsent', v)}
+             />
+             {errors.identityConsent ? <Txt style={{ color: colors.danger, fontSize: 12 }}>{errors.identityConsent}</Txt> : null}
+           </Card>
+           <Note style={{ marginTop: space.md }}>
+-            Tu Espacio cobra una comisión pequeña solo cuando hay una reserva. El porcentaje se define en la Fase 0.
++            Consulta las condiciones y la comisión vigente antes de habilitar tu espacio.
+           </Note>
+         </>
+       )}
+ 
+       {formError ? (
+         <Note tone="danger" icon="alert-circle-outline" style={{ marginTop: space.lg }}>
+           {formError}
+         </Note>
+--- before/app/src/domain/spaceForm.js
++++ after/app/src/domain/spaceForm.js
+@@ -0,0 +1,63 @@
++import { VEHICLES } from './rules';
++import { ApiError } from '../api/errors';
++
++export const toForm = (s) => ({
++  name: s?.name || '',
++  address: s?.address || '',
++  destinationId: s?.destinationId || null,
++  hostType: s?.hostType || null,
++  capacity: { car: String(s?.capacity?.car ?? 0), moto: String(s?.capacity?.moto ?? 0) },
++  rates: {
++    car: { unit: s?.rates?.car?.unit || 'hour', price: s?.rates?.car ? String(s.rates.car.price) : '' },
++    moto: { unit: s?.rates?.moto?.unit || 'hour', price: s?.rates?.moto ? String(s.rates.moto.price) : '' },
++  },
++  schedule: { open: s?.schedule?.open || '07:00', close: s?.schedule?.close || '19:00', days: s?.schedule?.days || 'Lun – Vie' },
++  conditions: {
++    covered: !!s?.conditions?.covered,
++    keys: !!s?.conditions?.keys,
++    maxHeight: s?.conditions?.maxHeight ? String(s.conditions.maxHeight).replace('.', ',') : '',
++  },
++  published: s ? s.status === 'published' : true,
++  identityConsent: false,
++  latitude: s?.location ? String(s.location.lat) : '',
++  longitude: s?.location ? String(s.location.lon) : '',
++});
++
++export const digits = (v) => v.replace(/[^\d]/g, '');
++
++export function toPayload(f, mode) {
++  const capacity = { car: Number(digits(f.capacity.car) || 0), moto: Number(digits(f.capacity.moto) || 0) };
++  const rates = {};
++  Object.keys(VEHICLES).forEach((v) => {
++    rates[v] = capacity[v] > 0 ? { unit: f.rates[v].unit, price: Number(digits(f.rates[v].price) || 0) } : null;
++  });
++  const h = f.conditions.maxHeight.trim().replace(',', '.');
++  const latitude = f.latitude.trim().replace(',', '.');
++  const longitude = f.longitude.trim().replace(',', '.');
++  const hasLocation = latitude !== '' || longitude !== '';
++  if (mode === 'create' || hasLocation) {
++    const fields = {};
++    if (!latitude || !Number.isFinite(Number(latitude)) || Math.abs(Number(latitude)) > 90) fields.latitude = 'Escribe una latitud entre -90 y 90.';
++    if (!longitude || !Number.isFinite(Number(longitude)) || Math.abs(Number(longitude)) > 180) fields.longitude = 'Escribe una longitud entre -180 y 180.';
++    if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revisa las coordenadas del espacio.', 422, { fields });
++  }
++  const payload = {
++    ...(hasLocation ? { location: {lat: Number(latitude), lon: Number(longitude)} } : {}),
++    status: f.published ? 'published' : 'paused',
++    capacity,
++    rates,
++    schedule: { ...f.schedule, open: f.schedule.open.trim(), close: f.schedule.close.trim() },
++    conditions: { covered: f.conditions.covered, keys: f.conditions.keys, maxHeight: h ? Number(h) : null },
++  };
++  if (mode === 'create' || mode === 'host-edit') {
++    payload.name = f.name;
++    payload.address = f.address;
++  }
++  if (mode === 'create') {
++    payload.destinationId = f.destinationId || 'custom';
++    payload.hostType = f.hostType;
++    payload.identityConsent = f.identityConsent;
++  }
++  return payload;
++}
++
+--- before/compose.production.yaml
++++ after/compose.production.yaml
+@@ -0,0 +1,43 @@
++name: tu-espacio-production
++services:
++  app:
++    build: .
++    init: true
++    restart: unless-stopped
++    read_only: true
++    tmpfs: [/tmp]
++    env_file: ["${PRODUCTION_ENV_FILE:-.env}"]
++    environment:
++      APP_ENV: production
++      PAYMENT_PROVIDER: mercadopago
++      MP_LIVE_MODE: "true"
++    command: [python, -m, server.run, --regions, co, --host, 0.0.0.0, --data, /data]
++    volumes: [production-data:/data]
++    expose: ["8080"]
++    healthcheck:
++      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/region', timeout=2)"]
++      interval: 15s
++      timeout: 3s
++      start_period: 40s
++      retries: 3
++    networks: [application]
++  proxy:
++    image: caddy:2
++    restart: unless-stopped
++    environment:
++      PUBLIC_HOST: "${PUBLIC_HOST:?Configura PUBLIC_HOST con el dominio del comercio}"
++    ports: ["80:80", "443:443", "443:443/udp"]
++    volumes:
++      - ./Caddyfile:/etc/caddy/Caddyfile:ro
++      - proxy-data:/data
++      - proxy-config:/config
++    depends_on:
++      app:
++        condition: service_healthy
++    networks: [application]
++networks:
++  application: {}
++volumes:
++  production-data: {}
++  proxy-data: {}
++  proxy-config: {}
+--- before/scripts/preparar-entrega.py
++++ after/scripts/preparar-entrega.py
+@@ -5,16 +5,20 @@
+ import json
+ from pathlib import Path
+ import shutil
+ import subprocess
+ import tempfile
+ import zipfile
+ 
+ EXCLUDED={'.git','node_modules','.runtime','__pycache__','artifacts','.expo','dist','.env','.env.local'}
++
++
++def excluded(name):
++    return name in EXCLUDED or (name.startswith('.env') and name != '.env.example')
+ 
+ 
+ def git(folder,*args):
+     return subprocess.run(['git','-C',str(folder),*args],check=True,capture_output=True).stdout
+ 
+ 
+ def main():
+     parser=argparse.ArgumentParser(description=__doc__)
+@@ -36,17 +40,17 @@
+                 if not relative or info.is_dir():continue
+                 target=(checkout/relative).resolve()
+                 if not target.is_relative_to(checkout):raise SystemExit('Ruta inválida en el ZIP')
+                 target.parent.mkdir(parents=True,exist_ok=True)
+                 target.write_bytes(z.read(info))
+         git(checkout,'init','--quiet')
+         git(checkout,'add','--force','--all')
+         tree=git(checkout,'write-tree').decode().strip()
+-        shutil.copytree(root,checkout,dirs_exist_ok=True,ignore=lambda p,n:[x for x in n if x in EXCLUDED or x.endswith(('.pyc','.log'))])
++        shutil.copytree(root,checkout,dirs_exist_ok=True,ignore=lambda p,n:[x for x in n if excluded(x) or x.endswith(('.pyc','.log'))])
+         git(checkout,'add','--all')
+         patch.write_bytes(git(checkout,'diff','--cached','--binary','--full-index',tree))
+         files=git(checkout,'diff','--cached','--name-only',tree).decode().splitlines()
+         git(checkout,'read-tree','--reset','-u',tree)
+         git(checkout,'apply','--check',str(patch))
+         git(checkout,'apply',str(patch))
+         manifest['changedFiles']={}
+         for name in files:
+@@ -57,17 +61,17 @@
+         manifest['patchSHA256']=hashlib.sha256(patch.read_bytes()).hexdigest()
+         manifest['patchVerified']=True
+     (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
+     archive=root.parent/'tu-espacio-avance-respaldo.zip'
+     temporary=archive.with_suffix('.zip.tmp')
+     with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED) as z:
+         for p in root.rglob('*'):
+             relative=p.relative_to(root)
+-            if p.is_file() and not any(part in EXCLUDED for part in relative.parts) and p.suffix not in ['.pyc','.log']:
++            if p.is_file() and not any(excluded(part) for part in relative.parts) and p.suffix not in ['.pyc','.log']:
+                 z.write(p,Path(root.name)/relative)
+         for folder in [out,root/'tuespacio/artifacts/verification']:
+             for p in folder.rglob('*'):
+                 if p.is_file():z.write(p,Path(root.name)/p.relative_to(root))
+     temporary.replace(archive)
+     print(f'Parche verificado: {len(files)} archivos ({patch.stat().st_size:,} bytes)')
+     print(f'Respaldo: {archive} ({archive.stat().st_size:,} bytes)')
+     print(f'Manifiesto: {out / "manifest.json"}')
+--- before/server/admin.py
++++ after/server/admin.py
+@@ -0,0 +1,60 @@
++"""Operaciones administrativas locales; requieren acceso al volumen de datos."""
++import argparse
++import getpass
++import json
++from pathlib import Path
++import re
++
++from .common import REGIONS, Store, encode, now, password_hash, require, uid
++from .locations import coordinates
++
++
++def create_admin(data, region, email, name, password):
++    require(region in [r['id'] for r in REGIONS], 'Región inválida.')
++    email = email.strip().lower()
++    require(re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email) and not email.endswith('@demo.test'), 'Usa un correo real del administrador.')
++    require(3 <= len(name.strip()) <= 100 and 12 <= len(password) <= 128, 'Nombre de 3–100 caracteres y contraseña de 12–128.')
++    store = Store(Path(data) / region / 'identity.sqlite')
++    value = {'id': uid('u'), 'email': email, 'name': name.strip(), 'role': 'admin', 'region': region}
++    with store.connect(write=True) as db:
++        require(not db.execute('SELECT 1 FROM users WHERE email=?', (email,)).fetchone(), 'El correo ya existe; no se sobrescribe la cuenta.')
++        db.execute('INSERT INTO users VALUES (?,?,?,?)', (value['id'], email, password_hash(password), encode(value)))
++    return value['id']
++
++
++def approve_space(data, region, id):
++    require(region in [r['id'] for r in REGIONS], 'Región inválida.')
++    store = Store(Path(data) / region / 'inventory.sqlite')
++    with store.connect(write=True) as db:
++        space = store.get(id, db)
++        require(not space.get('demo') and not id.startswith(('s-emp-', 's-uni-', 's-cli-')), 'No se aprueban espacios demo para cobros reales.')
++        coordinates(space.get('location'))
++        space.update(verification='approved', status='published', approvedAt=now())
++        store.put(id, space, db)
++        event = {'id': uid('audit'), 'type': 'space.approved', 'spaceId': id, 'at': now(), 'actor': 'local-administrator'}
++        db.execute('INSERT INTO events(id,value) VALUES (?,?)', (event['id'], encode(event)))
++    return id
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--data', required=True)
++    parser.add_argument('--region', default='co', choices=[r['id'] for r in REGIONS])
++    commands = parser.add_subparsers(dest='command', required=True)
++    admin = commands.add_parser('create-admin')
++    admin.add_argument('--email', required=True)
++    admin.add_argument('--name', required=True)
++    approve = commands.add_parser('approve-space')
++    approve.add_argument('--id', required=True)
++    args = parser.parse_args()
++    if args.command == 'create-admin':
++        password = getpass.getpass('Contraseña (mínimo 12): ')
++        require(password == getpass.getpass('Repetir contraseña: '), 'Las contraseñas no coinciden.')
++        result = create_admin(args.data, args.region, args.email, args.name, password)
++    else:
++        result = approve_space(args.data, args.region, args.id)
++    print('Operación completada:', result)
++
++
++if __name__ == '__main__':
++    main()
+--- before/server/bookings.py
++++ after/server/bookings.py
+@@ -36,19 +36,19 @@
+                 data['audience'] = list(dict.fromkeys(id for id in [booking['driverId'], booking['space'].get('ownerId'), booking['space'].get('hostId')] if id))
+                 db.execute('INSERT OR IGNORE INTO outbox(id,value) VALUES (?,?)', (data['id'], encode(data)))
+ 
+     def step(self, b, step, status='ok', detail=''):
+         b['steps'].append({'step': step, 'status': status, 'detail': detail, 'at': now()})
+         b['steps'] = b['steps'][-128:]
+         self.save(b)
+ 
+-    def payment(self, b, action):
++    def payment(self, b, action, **options):
+         return self.config.call('payments', 'POST', '/internal/payments/' + b['id'],
+-                                {'action': action, 'amount': b['amount'], 'currency': b['currency'], 'description': b['space']['name'], 'method': b['payment']['method'], 'scenario': b.get('scenario', 'none')})
++                                {'action': action, 'amount': b['amount'], 'currency': b['currency'], 'description': b['space']['name'], 'method': b['payment']['method'], 'scenario': b.get('scenario', 'none'), **options})
+ 
+     def slot(self, b, action):
+         return self.config.call('inventory', 'POST', '/internal/slots/' + b['id'],
+                                 {'action': action, 'spaceId': b['spaceId'], 'vehicle': b['vehicle'], 'userId': b['driverId']})
+ 
+     def compensate(self, b):
+         payment = self.config.call('payments', 'GET', '/internal/payments/' + b['id'])
+         if payment:
+@@ -102,16 +102,19 @@
+         if b['status'] == 'pending':
+             self.slot(b, 'hold')
+             result = self.payment(b, 'checkout')
+             b['payment'].update(result)
+             b['payment']['status'] = result['state']
+             b['status'] = 'awaiting_payment'
+             self.save(b)
+         result = self.config.call('payments', 'GET', '/internal/payments/' + b['id'])
++        expired = (datetime.now(timezone.utc) - datetime.fromisoformat(b['createdAt'].replace('Z', '+00:00'))).total_seconds() >= 600
++        if result['state'] in ['awaiting', 'creating']:
++            result = self.payment(b, 'sync', minInterval=0 if expired else 30)
+         b['payment'].update(result)
+         b['payment']['status'] = result['state']
+         if result['state'] == 'captured':
+             # Expired holds never turn into confirmed spots; compensation refunds the charge.
+             self.slot(b, 'confirm')
+             b['status'] = 'confirmed'
+             self.save(b, 'reservation.confirmed')
+         elif result['state'] in ['declined', 'voided', 'refunded']:
+@@ -212,16 +215,19 @@
+                          'meta': {'space': b['space']['name'], 'idempotencyKey': b.get('idempotencyKey', b['id'])}, 'steps': b['steps']} for b in all_b]
+             return all_b
+         if path.startswith('/reservations/'):
+             id = path.split('/')[2]
+             with self.lock(id):
+                 b = self.load(id)
+                 require(self.accessible(user, b), 'No tienes acceso a esta reserva.', 'FORBIDDEN', 403)
+                 if method == 'GET':
++                    if b['payment'].get('provider') == 'mercadopago' and b['status'] == 'awaiting_payment':
++                        self.payment(b, 'sync', minInterval=0)
++                        b = self.resume(b)
+                     if path.endswith('/receipt'):
+                         with self.store.connect() as db:
+                             row = db.execute('SELECT value FROM receipts WHERE id=?', (b['id'],)).fetchone()
+                         require(row, 'El recibo estará disponible cuando se confirme el pago.', 'RECEIPT_UNAVAILABLE', 409)
+                         return {'receipt': json.loads(row['value']), 'booking': b}
+                     return b
+                 action = path.split('/')[-1]
+                 if action == 'cancel' and method == 'POST':
+--- before/server/common.py
++++ after/server/common.py
+@@ -64,27 +64,34 @@
+             db.executescript('''
+                 PRAGMA journal_mode=WAL;
+                 CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, value TEXT NOT NULL);
+                 CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE, password TEXT, value TEXT);
+                 CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id TEXT, expires REAL);
+                 CREATE TABLE IF NOT EXISTS slots (id TEXT PRIMARY KEY, space_id TEXT, vehicle TEXT,
+                     state TEXT, expires REAL, user_id TEXT);
+                 CREATE INDEX IF NOT EXISTS slots_space ON slots(space_id,vehicle,state);
+-                CREATE TABLE IF NOT EXISTS payment_intents (id TEXT PRIMARY KEY, value TEXT NOT NULL);
++                CREATE TABLE IF NOT EXISTS payment_intents (id TEXT PRIMARY KEY, value TEXT NOT NULL, provider_id TEXT);
+                 CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, value TEXT NOT NULL);
+                 CREATE TABLE IF NOT EXISTS locations (id TEXT PRIMARY KEY, value TEXT NOT NULL);
+                 CREATE TABLE IF NOT EXISTS geocode_cache (id TEXT PRIMARY KEY, value TEXT NOT NULL, expires REAL);
+                 CREATE TABLE IF NOT EXISTS payments (id TEXT PRIMARY KEY, amount INTEGER, state TEXT, method TEXT);
+                 CREATE TABLE IF NOT EXISTS bookings (id TEXT PRIMARY KEY, user_id TEXT, idem TEXT,
+                     fingerprint TEXT, value TEXT, UNIQUE(user_id,idem));
+                 CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, value TEXT, delivered INTEGER DEFAULT 0);
+                 CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                     id TEXT UNIQUE, value TEXT);
+             ''')
++        # Serialize migration with ordinary writes; support databases from earlier builds.
++        with self.connect(write=True) as db:
++            columns = {row['name'] for row in db.execute('PRAGMA table_info(payment_intents)')}
++            if 'provider_id' not in columns:
++                db.execute('ALTER TABLE payment_intents ADD COLUMN provider_id TEXT')
++            db.execute("UPDATE payment_intents SET provider_id=json_extract(value,'$.providerId') WHERE provider_id IS NULL AND json_valid(value)")
++            db.execute('CREATE UNIQUE INDEX IF NOT EXISTS payment_intents_provider ON payment_intents(provider_id) WHERE provider_id IS NOT NULL')
+ 
+     @contextlib.contextmanager
+     def connect(self, write=False):
+         db = sqlite3.connect(self.path, timeout=10)
+         db.row_factory = sqlite3.Row
+         try:
+             if write:
+                 db.execute('BEGIN IMMEDIATE')
+--- before/server/identity.py
++++ after/server/identity.py
+@@ -39,17 +39,17 @@
+             return {'ok': True}
+         if path in ['/auth/login', '/auth/register'] and method == 'POST':
+             email = str(body.get('email', '')).strip().lower()
+             password = body.get('password', '')
+             require(isinstance(password, str) and len(password) <= 128, 'La contraseña no es válida.')
+             with self.store.connect(write=True) as db:
+                 if path.endswith('register'):
+                     require(re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email), 'Escribe un correo válido.')
+-                    require((12 if self.config.production else 6) <= len(password) <= 128, 'La contraseña debe tener entre 6 y 128 caracteres.')
++                    require((12 if self.config.production else 6) <= len(password) <= 128, f'La contraseña debe tener entre {12 if self.config.production else 6} y 128 caracteres.')
+                     require(body.get('role') in ['driver', 'host'], 'Este perfil requiere alta por administración.')
+                     require(3 <= len(str(body.get('name', '')).strip()) <= 100, 'Escribe un nombre de 3 a 100 caracteres.')
+                     require(body.get('vehicle', 'car') in ['car', 'moto'], 'El vehículo no es válido.')
+                     value = {'id': uid('u'), 'name': body['name'].strip(), 'email': email, 'role': body['role'],
+                              'vehicle': body.get('vehicle', 'car'), 'identity': 'pending', 'region': self.config.region['id']}
+                     try:
+                         db.execute('INSERT INTO users VALUES (?,?,?,?)', (value['id'], email, password_hash(password), encode(value)))
+                     except sqlite3.IntegrityError:
+--- before/server/inventory.py
++++ after/server/inventory.py
+@@ -65,18 +65,21 @@
+             counts = dict(db.execute('SELECT state,COUNT(*) FROM slots WHERE space_id=? AND vehicle=? GROUP BY state', (s['id'], vehicle)).fetchall())
+             capacity, occupied = s['capacity'][vehicle], s['occupied'][vehicle]
+             held, reserved = counts.get('held', 0), counts.get('confirmed', 0)
+             free = max(0, capacity - occupied - held - reserved)
+             status = 'paused' if s['status'] != 'published' else 'unsupported' if not capacity else 'full' if not free else 'few' if free <= 3 else 'available'
+             s['availability'][vehicle] = dict(free=free, capacity=capacity, occupied=occupied, held=held, reserved=reserved, status=status)
+         s['region'] = self.config.region['id']
+         s['currency'] = self.config.region['currency']
+-        s['host'] = {'name': 'Anfitrión de prueba', 'identity': 'pending'} if s.get('hostId') else None
++        s['host'] = {'name': 'Anfitrión' if self.config.production else 'Anfitrión de prueba', 'identity': s.get('verification', 'pending')} if s.get('hostId') else None
+         return s
++
++    def visible(self, space):
++        return space['status'] == 'published' and (not self.config.production or space.get('verification') == 'approved')
+ 
+     def owns(self, user, space):
+         check_role(user)
+         require(user['id'] in [space.get('ownerId'), space.get('hostId')] or user['role'] == 'admin', 'Este espacio pertenece a otra cuenta.', 'FORBIDDEN', 403)
+ 
+     def validate(self, s):
+         require(isinstance(s.get('name'), str) and 3 <= len(s['name']) <= 100, 'El nombre debe tener entre 3 y 100 caracteres.')
+         require(isinstance(s.get('address'), str) and 3 <= len(s['address']) <= 160, 'Escribe una dirección válida.')
+@@ -114,33 +117,33 @@
+                 action = body['action']
+                 if action == 'hold':
+                     if slot:
+                         require(slot['state'] in ['held', 'confirmed'], 'La retención venció o fue liberada.', 'HOLD_EXPIRED', 409)
+                         return dict(slot)
+                     s = self.store.get(body['spaceId'], db)
+                     v = body['vehicle']
+                     require(v in ['car', 'moto'] and s['rates'].get(v), 'Vehículo no admitido.')
+-                    require(s['status'] == 'published' and self.dto(s, db)['availability'][v]['free'] > 0, 'El último cupo ya fue tomado. Elige otro espacio.', 'SPACE_TAKEN', 409)
++                    require(self.visible(s) and self.dto(s, db)['availability'][v]['free'] > 0, 'El último cupo ya fue tomado. Elige otro espacio.', 'SPACE_TAKEN', 409)
+                     db.execute('INSERT INTO slots VALUES (?,?,?,?,?,?)', (id, s['id'], v, 'held', time.time() + 600, body['userId']))
+                     return {'id': id, 'state': 'held'}
+                 require(slot, 'Retención inexistente.', 'NOT_FOUND', 404)
+                 if action == 'confirm':
+                     require(slot['state'] in ['held', 'confirmed'], 'La retención venció.', 'HOLD_EXPIRED', 409)
+                     db.execute("UPDATE slots SET state='confirmed' WHERE id=?", (id,))
+                 elif action == 'release':
+                     db.execute("UPDATE slots SET state='released' WHERE id=?", (id,))
+                 else:
+                     raise Problem('VALIDATION', 'Acción inválida.', 422)
+                 return {'ok': True}
+             if path == '/spaces' and method == 'GET':
+                 vehicle = query.get('vehicle', 'car')
+                 require(vehicle in ['car', 'moto'], 'Vehículo inválido.')
+                 spaces = [self.dto(json.loads(r['value']), db) for r in db.execute('SELECT value FROM documents')]
+-                spaces = [s for s in spaces if s['status'] == 'published' and s['rates'].get(vehicle) and
++                spaces = [s for s in spaces if self.visible(s) and s['rates'].get(vehicle) and
+                           (not query.get('destinationId') or query['destinationId'] not in ['d-emp', 'd-uni', 'd-cli'] or s['destinationId'] == query['destinationId']) and
+                           (query.get('covered') != 'true' or s['conditions']['covered']) and
+                           (query.get('noKeys') != 'true' or not s['conditions']['keys']) and
+                           (not query.get('kind') or s['kind'] == query['kind'])]
+                 destination = query.get('destinationId', '')
+                 point = self.locations.get(destination)['location'] if destination and destination not in ['d-emp', 'd-uni', 'd-cli'] else None
+                 if point:
+                     for s in spaces:
+@@ -152,32 +155,34 @@
+                 all_spaces = [self.dto(json.loads(r['value']), db) for r in db.execute('SELECT value FROM documents')]
+                 if path == '/internal/spaces':
+                     check_role(user, 'admin')
+                     return all_spaces
+                 all_spaces = [s for s in all_spaces if user['id'] in [s.get('ownerId'), s.get('hostId')]]
+                 return (all_spaces[0] if all_spaces else None) if path == '/owner/space' else all_spaces
+             if path == '/host/spaces' and method == 'POST':
+                 check_role(user, 'host')
+-                require(body.get('identityConsent') is True, 'Acepta solicitar la verificación de identidad de prueba.')
++                require(body.get('identityConsent') is True, 'Acepta solicitar la verificación de identidad y del espacio.')
+             if path.startswith('/spaces/'):
+                 id = path.split('/')[2]
+                 s = self.store.get(id, db)
+                 if method == 'GET':
++                    require(not self.config.production or self.visible(s) or user and (user['role'] == 'admin' or user['id'] in [s.get('hostId'), s.get('ownerId')]), 'Espacio no disponible.', 'NOT_FOUND', 404)
+                     self.dto(s, db)
+                     if query.get('track') == 'true':
+                         s['metrics']['views'][-1] += 1
+                         self.store.put(id, s, db)
+                     return self.dto(s, db)
+                 self.owns(user, s)
+                 if method == 'PATCH':
+                     for k in ['name', 'address', 'capacity', 'rates', 'schedule', 'conditions', 'status', 'destinationId', 'location']:
+                         if k in body:
+                             s[k] = body[k]
+                     self.validate(s)
++                    require(not self.config.production or s['status'] != 'published' or s.get('verification') == 'approved', 'El espacio requiere aprobación antes de publicarse.', 'VERIFICATION_REQUIRED', 409)
+                     for v in ['car', 'moto']:
+                         require(s['capacity'][v] >= s['occupied'][v] + db.execute("SELECT COUNT(*) FROM slots WHERE space_id=? AND vehicle=? AND state IN ('held','confirmed')", (id, v)).fetchone()[0], 'La capacidad no puede ser inferior a los cupos comprometidos.', 'CAPACITY_CONFLICT', 409)
+                 elif path.endswith('/occupancy') and method == 'POST':
+                     v, delta = body.get('vehicle'), body.get('delta')
+                     require(v in ['car', 'moto'] and type(delta) is int and delta in [-1, 1], 'Ajuste inválido.')
+                     require(0 <= s['occupied'][v] + delta and (delta < 0 or self.dto(s, db)['availability'][v]['free'] > 0), 'No hay cupos o vehículos para ese ajuste.', 'CAPACITY_CONFLICT', 409)
+                     s['occupied'][v] += delta
+                 else:
+--- before/server/locations.py
++++ after/server/locations.py
+@@ -69,32 +69,32 @@
+         if not query:
+             return suggestions
+         require(len(query) >= 3, 'Escribe al menos 3 caracteres.')
+         key = normalized(query)
+         local = [d for d in suggestions if key in normalized(d['name'] + ' ' + d['hint'])]
+         with self.store.connect(write=True) as db:
+             for row in db.execute('SELECT value FROM documents').fetchall():
+                 s = json.loads(row['value'])
+-                if s['status'] == 'published' and s.get('location') and key in normalized(s['name'] + ' ' + s['address']):
++                if s['status'] == 'published' and (not self.config.production or s.get('verification') == 'approved') and s.get('location') and key in normalized(s['name'] + ' ' + s['address']):
+                     local.append(self.remember(s['name'], s['address'], s['location'], 'catalogue', db))
+         if local:
+             return local[:12]
+         require(self.endpoint, 'La búsqueda de direcciones no está configurada. Contacta a administración.', 'GEOCODER_UNAVAILABLE', 503)
+         with self.lock:
+             with self.store.connect() as db:
+                 row = db.execute('SELECT value FROM geocode_cache WHERE id=? AND expires>?', (key, time.time())).fetchone()
+             if row:
+                 return json.loads(row['value'])
+             require(time.monotonic() - self.last_request >= 1, 'Espera un segundo antes de buscar de nuevo.', 'RATE_LIMITED', 429)
+             self.last_request = time.monotonic()
+             lat, lon = CENTRES[self.config.region['id']]
+-            url = self.endpoint + '?' + urlencode({'q': query, 'limit': 8, 'lat': lat, 'lon': lon, 'lang': self.config.region['language']})
++            url = self.endpoint + '?' + urlencode({'q': query, 'limit': 8, 'lat': lat, 'lon': lon})
+             try:
+-                with urlopen(Request(url, headers={'User-Agent': 'TuEspacio/1.0 address-search', 'Accept': 'application/json'}), timeout=6) as response:
++                with urlopen(Request(url, headers={'User-Agent': 'TuEspacio/1.0 address-search', 'Accept': 'application/json', 'Accept-Language': self.config.region['language'] + ',en;q=0.8'}), timeout=6) as response:
+                     raw = response.read(262145)
+                     require(len(raw) <= 262144, 'Respuesta de direcciones demasiado grande.', 'GEOCODER_UNAVAILABLE', 502)
+                     features = json.loads(raw)['features']
+                 results = []
+                 with self.store.connect(write=True) as db:
+                     for f in features[:8]:
+                         props = f['properties']
+                         lon, lat = f['geometry']['coordinates'][:2]
+--- before/server/mercadopago.py
++++ after/server/mercadopago.py
+@@ -1,16 +1,17 @@
+ """Mercado Pago Checkout Pro / Orders API. No card data enters this server."""
+ from decimal import Decimal, InvalidOperation
+ import hashlib
+ import hmac
+ import json
+ import os
+ import re
+ import threading
++import time
+ from urllib.parse import urlencode, urlsplit
+ from urllib.request import Request, urlopen
+ from urllib.error import HTTPError, URLError
+ import uuid
+ 
+ from .common import Problem, encode, now, require
+ 
+ 
+@@ -52,17 +53,17 @@
+ 
+     def load(self, id):
+         with self.store.connect() as db:
+             row = db.execute('SELECT value FROM payment_intents WHERE id=?', (id,)).fetchone()
+         return json.loads(row['value']) if row else None
+ 
+     def save(self, payment):
+         with self.store.connect(write=True) as db:
+-            db.execute('INSERT INTO payment_intents VALUES (?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value', (payment['id'], encode(payment)))
++            db.execute('INSERT INTO payment_intents(id,value,provider_id) VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,provider_id=excluded.provider_id', (payment['id'], encode(payment), payment.get('providerId')))
+         return payment
+ 
+     def checked(self, payment, order):
+         require(str(order.get('id')) == payment['providerId'] and order.get('external_reference') == payment['id'] and
+                 str(order.get('user_id')) == self.collector and order.get('currency') == 'COP', 'La orden no corresponde a esta reserva o comercio.', 'PAYMENT_MISMATCH', 409)
+         try:
+             amount = Decimal(str(order['total_amount']))
+             paid = Decimal(str(order.get('total_paid_amount', '0')))
+@@ -116,16 +117,22 @@
+                 return self.public(payment)
+             require(payment, 'Pago no encontrado.', 'NOT_FOUND', 404)
+             if action == 'status':
+                 return self.public(payment)
+             if action in ['refund', 'void']:
+                 payment = self.recover_order(payment)
+             require(payment.get('providerId'), 'La orden se está recuperando.', 'PAYMENT_PROVIDER_ERROR', 503)
+             if action == 'sync':
++                interval = body.get('minInterval', 0)
++                require(type(interval) is int and 0 <= interval <= 300, 'Intervalo de consulta inválido.')
++                if time.time() - payment.get('lastSyncAttemptAt', 0) < interval:
++                    return self.public(payment)
++                payment['lastSyncAttemptAt'] = time.time()
++                self.save(payment)
+                 payment = self.checked(payment, self.request('GET', '/v1/orders/' + payment['providerId']))
+             elif action in ['refund', 'void']:
+                 payment = self.checked(payment, self.request('GET', '/v1/orders/' + payment['providerId']))
+                 if payment['state'] == 'captured':
+                     self.request('POST', '/v1/orders/' + payment['providerId'] + '/refund', {}, id + ':refund')
+                 elif payment['state'] not in ['refunded', 'voided', 'declined']:
+                     self.request('POST', '/v1/orders/' + payment['providerId'] + '/cancel', {}, id + ':cancel')
+                 payment = self.checked(payment, self.request('GET', '/v1/orders/' + payment['providerId']))
+@@ -146,13 +153,13 @@
+         request_id = headers.get('X-Request-Id', '')
+         require(ts.isdigit() and len(ts) <= 16 and request_id and len(request_id) <= 160, 'Firma ausente.', 'INVALID_SIGNATURE', 401)
+         manifest = f'id:{id.lower()};request-id:{request_id};ts:{ts};'
+         expected = hmac.new(self.secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+         require(hmac.compare_digest(expected, signature_hash), 'Firma inválida.', 'INVALID_SIGNATURE', 401)
+         require(body.get('type') == 'order' and body.get('data', {}).get('id') == id and body.get('live_mode') is self.live, 'Evento de otro entorno.', 'INVALID_SIGNATURE', 401)
+         with self.store.connect() as db:
+             # Sólo consultamos órdenes que pertenecen a este servidor.
+-            rows = db.execute('SELECT value FROM payment_intents').fetchall()
+-        payment = next((json.loads(row['value']) for row in rows if json.loads(row['value']).get('providerId') == id), None)
++            row = db.execute('SELECT value FROM payment_intents WHERE provider_id=?', (id,)).fetchone()
++        payment = json.loads(row['value']) if row else None
+         require(payment, 'Orden aún no registrada; reintenta la notificación.', 'PAYMENT_PENDING', 503)
+         self.operate(payment['id'], 'sync', {})
+         return {'accepted': True}
+--- before/server/run.py
++++ after/server/run.py
+@@ -54,16 +54,18 @@
+                 cmd = [sys.executable, '-m', 'server.service', service, '--region', region, '--base-port', str(port - 5), '--data', data, '--host', args.host]
+                 proc = subprocess.Popen(cmd, cwd=root, env=env)
+                 children.append((region, service, proc))
+                 print(f'PID {proc.pid}: {region}/{service}', flush=True)
+             print(f'\n{region.upper()}: http://{args.host}:{port}\n', flush=True)
+         while not stopping:
+             for region, service, proc in list(children):
+                 if proc.poll() is not None:
++                    if os.environ.get('APP_ENV') == 'production':
++                        raise SystemExit(f'{region}/{service} terminó; se detiene la región para evitar una instancia parcialmente disponible.')
+                     print(f'{region}/{service} terminó ({proc.returncode}); los demás servicios continúan.', flush=True)
+                     children.remove((region, service, proc))
+             if not children:
+                 raise SystemExit('Ningún servicio pudo iniciarse. Revisa puertos y permisos de red.')
+             time.sleep(.5)
+     finally:
+         for _, _, proc in children:
+             proc.terminate()
+--- before/server/service.py
++++ after/server/service.py
+@@ -38,21 +38,25 @@
+ class Gateway:
+     def __init__(self, config):
+         self.config = config
+         self.attempts = defaultdict(deque)
+         self.lock = threading.Lock()
+ 
+     def dispatch(self, method, path, body, user, query, headers):
+         cfg = self.config
++        # Never grant the service key to a client-controlled internal path.
++        require(path.startswith('/') and '%' not in path and '\\' not in path and '//' not in path and
++                not any(part.casefold() in ['internal', '.', '..'] for part in path.split('/')),
++                'Ruta no encontrada.', 'NOT_FOUND', 404)
+         if path == '/regions' and method == 'GET':
+             ports = json.loads(os.environ.get('PUBLIC_REGION_PORTS', '{"co":8080,"br":8090,"us":8100,"fr":8110,"jp":8120}'))
+             return [{**r, 'port': ports.get(r['id'], 8080 + i * 10)} for i, r in enumerate(REGIONS)]
+         if path == '/region' and method == 'GET':
+-            return {**cfg.region, 'demo': not cfg.production, 'payments': {'provider': cfg.payment_provider,
++            return {**cfg.region, 'demo': not cfg.production, 'passwordMinLength': 12 if cfg.production else 6, 'payments': {'provider': cfg.payment_provider,
+                     'available': cfg.payment_provider == 'demo' or cfg.region['id'] == 'co' and all(os.environ.get(k) for k in ['MP_ACCESS_TOKEN', 'MP_WEBHOOK_SECRET', 'MP_COLLECTOR_ID', 'APP_PUBLIC_URL']),
+                     'live': cfg.payment_provider == 'mercadopago' and os.environ.get('MP_LIVE_MODE') == 'true'}}
+         if path == '/payments/webhook' and method == 'POST':
+             return cfg.call('payments', 'POST', path, {'event': body, 'query': query, 'headers': {k: headers.get(k, '') for k in ['X-Signature', 'X-Request-Id']}})
+         token = headers.get('Authorization', '').removeprefix('Bearer ')
+         if path.startswith('/auth/'):
+             require(path in ['/auth/login', '/auth/register', '/auth/logout'] and method == 'POST', 'Ruta no encontrada.', 'NOT_FOUND', 404)
+             with self.lock:
+@@ -62,17 +66,17 @@
+                 while attempts and attempts[0] < clock - 60:
+                     attempts.popleft()
+                 require(len(attempts) < 30, 'Demasiados intentos. Espera un minuto.', 'RATE_LIMITED', 429)
+                 attempts.append(clock)
+                 if len(self.attempts) > 10000:
+                     self.attempts = defaultdict(deque, {k: v for k, v in self.attempts.items() if v and v[-1] > clock - 60})
+             return cfg.call('identity', method, path, {**body, **({'token': token} if path.endswith('logout') else {})})
+         public = method == 'GET' and (path.startswith('/spaces') and not path.endswith('/reservations') or path.startswith('/destinations'))
+-        user = None if public else cfg.call('identity', 'POST', '/auth/resolve', {'token': token})
++        user = None if public and not token else cfg.call('identity', 'POST', '/auth/resolve', {'token': token})
+         if path.startswith('/ops/'):
+             check_role(user, 'admin')
+             if path == '/ops/status':
+                 status = []
+                 for service in SERVICES[:-1]:
+                     start = time.monotonic()
+                     try:
+                         health = cfg.call(service, 'GET', '/health', timeout=.5)
+--- before/server/tests/test_admin.py
++++ after/server/tests/test_admin.py
+@@ -0,0 +1,50 @@
++from pathlib import Path
++import tempfile
++import unittest
++
++from server.admin import approve_space, create_admin
++from server.common import Problem, Store, password_matches
++
++
++class AdminTests(unittest.TestCase):
++    def test_admin_bootstrap_hashes_password_and_rejects_overwrite(self):
++        with tempfile.TemporaryDirectory() as data:
++            id = create_admin(data, 'co', 'admin@example.org', 'Admin real', 'long-fixture-password')
++            with Store(Path(data) / 'co/identity.sqlite').connect() as db:
++                row = db.execute('SELECT * FROM users WHERE id=?', (id,)).fetchone()
++                self.assertTrue(password_matches('long-fixture-password', row['password']))
++                self.assertNotEqual(row['password'], 'long-fixture-password')
++            with self.assertRaises(Problem):
++                create_admin(data, 'co', 'admin@example.org', 'Admin real', 'another-password')
++
++    def test_approval_requires_real_coordinates_and_records_audit(self):
++        with tempfile.TemporaryDirectory() as data:
++            store = Store(Path(data) / 'co/inventory.sqlite')
++            with store.connect(write=True) as db:
++                store.put('real-space', {'id': 'real-space', 'verification': 'pending', 'location': {'lat': 4.65, 'lon': -74.06}}, db)
++                store.put('demo-space', {'id': 'demo-space', 'demo': True, 'location': {'lat': 4.65, 'lon': -74.06}}, db)
++                store.put('bad-space', {'id': 'bad-space'}, db)
++            approve_space(data, 'co', 'real-space')
++            self.assertEqual(store.get('real-space')['verification'], 'approved')
++            with store.connect() as db:
++                self.assertEqual(db.execute('SELECT COUNT(*) FROM events').fetchone()[0], 1)
++            for id in ['demo-space', 'bad-space']:
++                with self.assertRaises(Problem): approve_space(data, 'co', id)
++
++    def test_production_supervisor_stops_all_children_on_service_failure(self):
++        from contextlib import redirect_stdout
++        from io import StringIO
++        from unittest.mock import Mock, patch
++        from server.run import main
++        processes = []
++        def start(*args, **kwargs):
++            child = Mock(pid=100 + len(processes))
++            child.poll.return_value = 1
++            processes.append(child)
++            return child
++        with patch.dict('os.environ', {'APP_ENV': 'production'}), patch('sys.argv', ['server.run', '--regions', 'co']), patch('server.run.subprocess.Popen', start), patch('server.run.signal.signal'), redirect_stdout(StringIO()):
++            with self.assertRaises(SystemExit): main()
++        self.assertEqual(len(processes), 6)
++        for child in processes:
++            child.terminate.assert_called_once()
++            child.wait.assert_called_once()
+--- before/server/tests/test_checkout.py
++++ after/server/tests/test_checkout.py
+@@ -101,16 +101,37 @@
+         html = render(receipt, b).decode()
+         self.assertNotIn('<script>Prueba', html)
+         self.assertIn('利用者', html)
+         self.assertIn('no sustituye una factura', html)
+         self.event(b)
+         with self.book.store.connect() as db:
+             self.assertEqual(db.execute('SELECT COUNT(*) FROM receipts').fetchone()[0], 1)
+         self.problem('FORBIDDEN', lambda: self.book.dispatch('GET', '/reservations/' + b['id'] + '/receipt', {}, {'id': 'other', 'role': 'driver'}, {}, {}))
++
++    def test_explicit_lookup_reconciles_approved_payment_without_webhook(self):
++        b = self.create()
++        self.approve(b)
++        result = self.book.dispatch('GET', '/reservations/' + b['id'], {}, self.driver, {}, {})
++        self.assertEqual(result['status'], 'confirmed')
++        self.assertEqual(result['payment']['status'], 'captured')
++        self.assertFalse(any(call[1].endswith('/refund') for call in self.calls))
++
++    def test_worker_forces_reconciliation_before_expiry_and_throttles_waiting(self):
++        b = self.create()
++        reads = len([call for call in self.calls if call[0] == 'GET'])
++        self.book.tick(); self.book.tick()
++        self.assertEqual(len([call for call in self.calls if call[0] == 'GET']), reads)
++        self.approve(b)
++        b['createdAt'] = (datetime.now(timezone.utc) - timedelta(seconds=601)).isoformat()
++        self.book.save(b)
++        # Keep the real inventory hold valid: age alone must not cause an approved order refund.
++        self.book.tick()
++        self.assertEqual(self.book.load(b['id'])['status'], 'confirmed')
++        self.assertFalse(any(call[1].endswith('/refund') for call in self.calls))
+ 
+     def test_forged_and_wrong_environment_webhooks_fail(self):
+         b = self.create()
+         self.problem('INVALID_SIGNATURE', lambda: self.provider.webhook({}, {'data.id': b['payment']['providerId']}, {}))
+         self.problem('INVALID_SIGNATURE', lambda: self.event(b, live_mode=True))
+         self.assertEqual(self.book.load(b['id'])['status'], 'awaiting_payment')
+ 
+     def test_wrong_merchant_amount_currency_never_confirms(self):
+@@ -253,14 +274,67 @@
+     def test_geocoder_results_are_cached_and_not_fabricated(self):
+         from io import BytesIO
+         fixture = {'features': [{'geometry': {'coordinates': [-74.06, 4.656]}, 'properties': {'name': 'Parque fixture', 'city': 'Bogotá', 'country': 'Colombia'}}]}
+         with patch('server.locations.urlopen', return_value=BytesIO(json.dumps(fixture).encode())) as request:
+             first = self.inv.locations.search('dirección fixture independiente', [])
+             second = self.inv.locations.search('dirección fixture independiente', [])
+         self.assertEqual(first, second)
+         self.assertEqual(request.call_count, 1)
++        from urllib.parse import parse_qs, urlsplit
++        outgoing = request.call_args.args[0]
++        self.assertNotIn('lang', parse_qs(urlsplit(outgoing.full_url).query))
++        self.assertEqual(outgoing.get_header('Accept-language'), 'es,en;q=0.8')
+         self.assertEqual(first[0]['source'], 'OpenStreetMap / Photon')
+         self.assertEqual(self.inv.locations.get(first[0]['id']), first[0])
+         self.assertEqual(distance_m(first[0]['location'], first[0]['location']), 0)
+ 
+     def test_invalid_coordinates_fail(self):
+         with self.assertRaises(Problem): distance_m({'lat': 100, 'lon': 0}, {'lat': 0, 'lon': 0})
++
++
++class ProductionContractTests(unittest.TestCase):
++    def test_payment_provider_index_migrates_previous_database(self):
++        import sqlite3
++        from server.common import Store
++        with tempfile.TemporaryDirectory() as root:
++            path = Path(root) / 'old-payments.sqlite'
++            with sqlite3.connect(path) as db:
++                db.execute('CREATE TABLE payment_intents(id TEXT PRIMARY KEY, value TEXT NOT NULL)')
++                db.execute('INSERT INTO payment_intents VALUES (?,?)', ('r-existing', json.dumps({'id':'r-existing','providerId':'ORDTST-existing'})))
++            store = Store(path)
++            with store.connect() as db:
++                row = db.execute('SELECT id FROM payment_intents WHERE provider_id=?', ('ORDTST-existing',)).fetchone()
++                self.assertEqual(row['id'], 'r-existing')
++                plan = db.execute('EXPLAIN QUERY PLAN SELECT value FROM payment_intents WHERE provider_id=?', ('ORDTST-existing',)).fetchone()['detail']
++                self.assertIn('INDEX', plan)
++            Store(path) # Migration is repeatable.
++
++    def test_pending_production_publication_cannot_be_republished_or_listed(self):
++        with tempfile.TemporaryDirectory() as root:
++            net = LocalNetwork(root)
++            inv = net.engines['inventory']
++            template = inv.store.get('s-emp-4')
++            host = {'id':'fixture-host','role':'host'}
++            body = {k:template[k] for k in ['name','address','capacity','rates','schedule','conditions','location','destinationId']}
++            body.update(status='published',identityConsent=True)
++            net.production = True
++            created = inv.dispatch('POST','/host/spaces',body,host,{}, {})
++            self.assertEqual(created['status'],'paused')
++            with self.assertRaises(Problem) as error:
++                inv.dispatch('PATCH','/spaces/'+created['id'],{'status':'published'},host,{}, {})
++            self.assertEqual(error.exception.code,'VERIFICATION_REQUIRED')
++            # Defend legacy records that were previously marked published without approval.
++            with inv.store.connect(write=True) as db:
++                record = inv.store.get(created['id'],db)
++                record['status'] = 'published'
++                inv.store.put(record['id'],record,db)
++            self.assertNotIn(created['id'],[s['id'] for s in inv.dispatch('GET','/spaces',{},None,{}, {})])
++            with self.assertRaises(Problem): inv.dispatch('GET','/spaces/'+created['id'],{},None,{}, {})
++            self.assertEqual(inv.dispatch('GET','/spaces/'+created['id'],{},host,{}, {})['id'],created['id'])
++
++    def test_production_registration_explains_twelve_character_minimum(self):
++        with tempfile.TemporaryDirectory() as root:
++            net = LocalNetwork(root)
++            net.production = True
++            with self.assertRaises(Problem) as error:
++                net.engines['identity'].dispatch('POST','/auth/register',{'email':'fixture@example.test','name':'Fixture User','password':'short123','role':'driver'},None,{}, {})
++            self.assertIn('12',str(error.exception))
+--- before/server/tests/test_http_contract.py
++++ after/server/tests/test_http_contract.py
+@@ -187,11 +187,36 @@
+         self.assertIn('DEMOSTRACIÓN'.encode(), response.read())
+         self.assertEqual(self.api('GET', '/reservations/' + id + '/receipt')[0], 401)
+ 
+     def test_12_webhook_rejects_without_provider_or_valid_signature(self):
+         status, payload = self.api('POST', '/payments/webhook', {'type': 'order'})
+         self.assertEqual(status, 404)
+         self.assertEqual(payload['error']['code'], 'NOT_FOUND')
+ 
++    def test_13_public_internal_routes_and_encoded_variants_cannot_release_slots(self):
++        token = self.login()
++        status, payload = self.api('POST', '/reservations', self.request_body(), token)
++        self.assertEqual(status, 200)
++        id = payload['data']['id']
++        for prefix in ['/internal', '/%69nternal', '/%2569nternal', '//internal', '/%2Finternal', '/INTERNAL', '/spaces/../internal']:
++            with self.subTest(prefix=prefix):
++                status, _ = self.api('POST', prefix + '/slots/' + id, {'action': 'release'}, token)
++                self.assertEqual(status, 404)
++        with self.engines['inventory'].store.connect() as db:
++            self.assertEqual(db.execute('SELECT state FROM slots WHERE id=?', (id,)).fetchone()['state'], 'confirmed')
++        self.assertEqual(self.api('GET', '/reservations/' + id, token=token)[1]['data']['status'], 'confirmed')
++
++    def test_14_pending_production_space_is_private_but_owner_can_edit(self):
++        host = self.login('host')
++        driver = self.login('driver')
++        previous = self.config.production
++        self.config.production = True
++        try:
++            self.assertEqual(self.api('GET','/spaces/s-emp-4',token=host)[0],200)
++            self.assertEqual(self.api('GET','/spaces/s-emp-4',token=driver)[0],404)
++            self.assertEqual(self.api('GET','/spaces/s-emp-4')[0],404)
++        finally:
++            self.config.production = previous
++
+ if __name__=='__main__':
+     unittest.main()
+ 
+--- before/server/tests/views.test.mjs
++++ after/server/tests/views.test.mjs
+@@ -72,16 +72,24 @@
+     const b=c.run('s.bookings[0]');
+     await c.run(`api('/reservations/${b.id}/check-in',{method:'POST'}).then(receiptView)`);
+     check(c.dialog.innerHTML.includes('data-action="check-out"'),region+': llegada');
+     await c.run(`api('/reservations/${b.id}/check-out',{method:'POST'}).then(receiptView)`);
+     check(c.dialog.innerHTML.includes('badge completed'),region+': salida');
+     c.run('s.page="bookings"');await c.run('loadPage()');
+     check(c.root.innerHTML.includes(b.code),region+': historial');
+   }
++  const production=await client();
++  production.run('s.region.demo=false;s.region.passwordMinLength=12;s.region.payments={provider:"mercadopago",available:true,live:true};s.registering=true;render()');
++  check(!production.root.innerHTML.includes(messages.es.noCharges),'Acceso live no promete pagos de prueba');
++  check(!production.root.innerHTML.includes(messages.es.demo),'Acceso live no presenta datos ficticios');
++  check(production.root.innerHTML.includes(messages.es.liveCharges),'Acceso live avisa de cobros reales');
++  check(production.root.innerHTML.includes('minlength="12"'),'Alta de producción exige mínimo 12 caracteres');
++  production.run('s.user={id:"fixture-user",name:"Fixture User",role:"driver",email:"fixture@example.test"};s.loading=false;render()');
++  check(!production.root.innerHTML.includes(messages.es.demo),'Navegación y pie live no anuncian demostración');
+   const xss=await client();
+   await xss.run('signIn({email:"conductor@demo.test",password:"demo123",role:"driver"})');
+   xss.run('s.user.name="<img src=x onerror=alert(1)>";s.page="settings";render()');
+   check(!xss.root.innerHTML.includes('<img src=x'), 'El nombre se escapa al renderizar');
+   check(xss.root.innerHTML.includes('&lt;img'), 'El nombre conserva su contenido como texto');
+   check(messages.ja.identityConsent.length>0&&messages.fr.errors.PAYMENT_DECLINED.length>0,'Consentimiento y errores localizados');
+   console.log(`OK: ${assertions} comprobaciones de cliente, plantillas y contratos. No incluye validación visual en navegador.`);
+ }finally{
+--- before/web/app.js
++++ after/web/app.js
+@@ -43,16 +43,20 @@
+     /[&<>"']/g,
+     (c) =>
+       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+         c
+       ])
+   );
+ const t = (key) =>
+   (messages[s.region?.language] || messages.es)[key] || messages.es[key] || key;
++const environmentLabel = () =>
++  t(s.region?.demo === false ? "productionLabel" : "demo");
++const paymentNotice = () =>
++  t(s.region?.payments?.live ? "liveCharges" : "noCharges");
+ const money = (amount) => formatMoney(amount, s.region);
+ const date = (value, full = true) => formatRegionalDate(value, s.region, full);
+ const countMoney = (key) =>
+   money(
+     s.bookings
+       .filter((b) => b.status === "completed")
+       .reduce((sum, b) => sum + b[key], 0)
+   );
+@@ -177,17 +181,17 @@
+   return `<div class="auth-shell"><section class="auth-story"><a class="brand" href="#">${logo()}</a><div class="story-copy"><h1>${esc(
+     t("welcome")
+   )}</h1><p>${esc(t("welcomeNote"))}</p></div>
+     <div class="parking-scene" aria-hidden="true"><div class="lane-label">PARKING</div><div class="parking-lane"><span class="parked-car"></span><span class="spot">P</span><span class="parked-car second"></span></div><div class="scene-caption">${icon(
+       "pin"
+     )} ${esc(s.region.city)} <span>${icon("check")} ${esc(
+     t("confirmed")
+   )}</span></div></div>
+-    <p class="story-foot">${esc(t("demo"))}</p></section>
++    <p class="story-foot">${esc(environmentLabel())}</p></section>
+     <main id="main" class="auth-main"><div class="auth-top">${regionSelect()}${button(
+     icon(document.documentElement.dataset.theme === "dark" ? "sun" : "moon"),
+     "theme",
+     "",
+     "icon-button"
+   )}</div>
+     <div class="auth-form"><h2>${esc(
+       t(s.registering ? "register" : "login")
+@@ -216,17 +220,21 @@
+     }
+     <label>${esc(
+       t("email")
+     )}<input name="email" type="email" autocomplete="email" required placeholder="tu@correo.com"></label>
+     <label>${esc(
+       t("password")
+     )}<input name="password" type="password" autocomplete="${
+     s.registering ? "new-password" : "current-password"
+-  }" required minlength="6" maxlength="128"></label>
++  }" required minlength="${
++    s.registering
++      ? s.region.passwordMinLength || (s.region.demo === false ? 12 : 6)
++      : 1
++  }" maxlength="128"></label>
+     <div class="form-error" role="alert"></div><button class="button full" type="submit">${esc(
+       t(s.registering ? "register" : "login")
+     )}${icon("arrow")}</button></form>
+     ${
+       !s.registering
+         ? s.region.demo === false
+           ? ""
+           : button(t("demoAccount"), "demo-login", "", "button secondary full")
+@@ -234,19 +242,21 @@
+     }
+     ${button(
+       t(s.registering ? "login" : "register"),
+       "auth-mode",
+       "",
+       "text-button full"
+     )}
+     <div class="auth-note">${icon("info")}<p>${esc(
+-    t("noCharges")
+-  )}<br><span>${esc(t("demo"))}</span></p></div></div>
+-    <footer>Tu Espacio · Sistemas Distribuidos · 2026</footer></main></div>`;
++    paymentNotice()
++  )}<br><span>${esc(environmentLabel())}</span></p></div></div>
++    <footer>Tu Espacio${
++      s.region.demo === false ? "" : " · Sistemas Distribuidos"
++    } · 2026</footer></main></div>`;
+ }
+ 
+ function regionSelect() {
+   return `<label class="region-control">${icon(
+     "globe"
+   )}<span class="sr-only">${esc(
+     t("region")
+   )}</span><select id="region-select">${s.regions
+@@ -289,17 +299,17 @@
+                   s.bookings.filter((b) => b.status === "confirmed").length
+                 }</span>`
+               : ""
+           }</a>`
+       )
+       .join("")}</nav>
+     <div class="sidebar-bottom"><div class="demo-label">${icon(
+       "info"
+-    )}<span>${esc(t("demo"))}</span></div>${button(
++    )}<span>${esc(environmentLabel())}</span></div>${button(
+     icon("exit") + t("logout"),
+     "logout",
+     "",
+     "nav-link logout"
+   )}</div></aside>
+     <div class="main-shell"><header class="topbar"><a class="mobile-brand" href="#${homePage()}">${logo()}</a><div class="breadcrumb">${esc(
+     t(s.page)
+   )}<span>/</span><span>${esc(
+@@ -362,17 +372,17 @@
+             "reload",
+             "",
+             "button secondary small"
+           )}</div>`
+         : ""
+     }
+     ${s.loading ? skeleton() : s.error ? errorState() : pageContent()}
+     <footer class="page-footer"><span>© 2026 Tu Espacio</span><span>${esc(
+-      t("demo")
++      environmentLabel()
+     )}</span></footer></main></div></div>`;
+   root
+     .querySelectorAll('.icon-button[data-action="theme"]')
+     .forEach((el) =>
+       el.setAttribute(
+         "aria-label",
+         el.dataset.action === "theme"
+           ? t(
+--- before/web/i18n.js
++++ after/web/i18n.js
+@@ -1082,8 +1082,34 @@
+     "領収書は支払い確認後に表示されます。更新して再度お試しください。",
+   latitude: "緯度",
+   longitude: "経度",
+   noCoverage: "この条件に合う登録済み駐車場は目的地の5km以内にありません。",
+ });
+ es.noCoverage =
+   "No hay espacios registrados a menos de 5 km de este destino con esos filtros.";
+ en.noCoverage = "No registered spaces within 5 km match these filters.";
++
++Object.assign(es, {
++  productionLabel: "Servicio de parqueaderos",
++  liveCharges:
++    "Los pagos se procesan mediante Mercado Pago y pueden generar cobros reales.",
++});
++Object.assign(en, {
++  productionLabel: "Parking service",
++  liveCharges:
++    "Payments are processed by Mercado Pago and may result in real charges.",
++});
++Object.assign(pt, {
++  productionLabel: "Serviço de estacionamento",
++  liveCharges:
++    "Os pagamentos são processados pelo Mercado Pago e podem gerar cobranças reais.",
++});
++Object.assign(fr, {
++  productionLabel: "Service de stationnement",
++  liveCharges:
++    "Les paiements sont traités par Mercado Pago et peuvent entraîner des débits réels.",
++});
++Object.assign(ja, {
++  productionLabel: "駐車サービス",
++  liveCharges:
++    "お支払いはMercado Pagoで処理され、実際に請求される場合があります。",
++});

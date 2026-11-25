@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Linking from 'expo-linking';
 import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -25,6 +26,7 @@ export default function ReservationDetail() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [busy, setBusy] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [receipt, setReceipt] = useState(null);
 
   if (!r) {
     return (
@@ -50,7 +52,18 @@ export default function ReservationDetail() {
   };
 
   const footer =
-    r.status === 'confirmed' ? (
+    r.status === 'awaiting_payment' ? (
+      <View style={{ gap: space.sm }}>
+        <Button title="Continuar en Mercado Pago" icon="card-outline" onPress={async () => {
+          try {
+            if (!/^https:\/\/www\.mercadopago\.com\.co\//.test(r.payment.checkoutUrl || '')) throw new Error('URL de pago inválida.');
+            await Linking.openURL(r.payment.checkoutUrl);
+          } catch (e) { setActionError(e.message); }
+        }} />
+        <Button title="Consultar estado del pago" variant="secondary" onPress={reload} />
+        <Button title="Cancelar reserva" variant="danger" loading={busy === 'cancel'} onPress={() => run('cancel', api.cancelReservation, 'Reserva cancelada')} />
+      </View>
+    ) : r.status === 'confirmed' ? (
       confirmCancel ? (
         <View style={{ gap: space.sm }}>
           <Txt variant="muted" style={{ textAlign: 'center' }}>
@@ -97,9 +110,9 @@ export default function ReservationDetail() {
         <Text style={styles.code} selectable>
           {r.code}
         </Text>
-        <Text style={styles.ticketHint}>Muéstralo en la entrada si te lo piden (supuesto: el procedimiento de ingreso está por definir).</Text>
+        <Text style={styles.ticketHint}>Presenta este código cuando tu reserva esté confirmada.</Text>
         <Text style={styles.ticketPaid}>
-          {r.payment.status === 'refunded' ? 'Reembolsada' : 'Reserva pagada'} · {formatCOP(r.amount)}
+          {r.payment.status === 'refunded' ? 'Reembolsada' : r.payment.status === 'captured' ? 'Pago confirmado' : 'Pago sin confirmar'} · {formatCOP(r.amount)}
         </Text>
         <View style={styles.ticketRow}>
           <View>
@@ -142,14 +155,22 @@ export default function ReservationDetail() {
         <Row label="Tarifa" value={rateLabel(r.space.rate)} />
         <Row label="Tiempo" value={formatDuration(r.durationMin)} />
         <Divider />
-        <Row label={r.payment.status === 'refunded' ? 'Reembolsado (simulado)' : 'Pagado (simulado)'} value={formatCOP(r.amount)} strong />
+        <Row label={r.payment.status === 'refunded' ? 'Reembolsado' : r.payment.status === 'captured' ? 'Pagado' : 'Pendiente'} value={formatCOP(r.amount)} strong />
         <Txt variant="small" style={{ marginTop: space.xs }}>
           {r.payment.method}
         </Txt>
       </Card>
+      {['confirmed', 'active', 'completed'].includes(r.status) && r.payment.provider === 'mercadopago' ? <Button title="Ver recibo de pago" variant="secondary" onPress={async () => {
+        try { setReceipt((await api.getReceipt(r.id)).receipt); } catch (e) { setActionError(e.message); }
+      }} style={{ marginTop: space.md }} /> : null}
+      {receipt ? <Card style={{ marginTop: space.md }}>
+        <Txt variant="title">{receipt.id}</Txt><Row label="Comercio" value={receipt.seller} /><Row label="Transacción" value={receipt.transactionId} />
+        <Row label="Emitido" value={receipt.issuedAt} /><Row label="Total" value={formatCOP(receipt.amount)} strong />
+        <Txt variant="small">Recibo de pago. No sustituye una factura fiscal. {receipt.live ? '' : 'PRUEBAS: sin cobro real.'}</Txt>
+      </Card> : null}
       {r.status === 'confirmed' ? (
         <Note tone="warning" icon="help-circle-outline" style={{ marginTop: space.md }}>
-          Política de cancelación, reembolso y tolerancia de llegada: por definir. En el prototipo, cancelar libera el cupo y simula el reembolso total.
+          {r.payment.provider === 'mercadopago' ? 'La cancelación se confirma cuando la pasarela verifica la reversión. Su acreditación depende del medio de pago.' : 'Demostración: cancelar libera el cupo y simula el reembolso total.'}
         </Note>
       ) : null}
     </Screen>

@@ -74,7 +74,7 @@ export default function Welcome() {
 const makeStyles = (c) => ({
   root: { flex: 1, backgroundColor: c.navy },
   scroll: { flexGrow: 1, paddingHorizontal: space.xl },
-  brand: { color: c.accent, fontSize: font.xs, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', marginTop: space.xxxl },
+  brand: { color: c.onBrandAccent, fontSize: font.xs, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginTop: space.xxxl },
   headline: { color: c.white, fontSize: 38, fontWeight: '900', letterSpacing: -1.2, lineHeight: 44, marginTop: space.md },
   tagline: { color: 'rgba(255,255,255,0.65)', fontSize: font.md, marginTop: space.sm, lineHeight: 24, maxWidth: 320 },
   card: { backgroundColor: c.card, borderRadius: radius.xl, paddingVertical: space.sm, marginTop: space.xxxl, overflow: 'hidden' },

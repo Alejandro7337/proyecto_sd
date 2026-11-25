@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { setSessionToken } from '../api/transport';
+import { api } from '../api';
 import { faults, setFault } from '../api/mock/demoControls';
 import { resetDb } from '../api/mock/db';
 
@@ -27,6 +28,7 @@ export function AppProvider({ children }) {
   }, []);
 
   const signOut = useCallback(() => {
+    void api.logout().catch(() => {});
     setSessionToken(null);
     setSession(null);
   }, []);

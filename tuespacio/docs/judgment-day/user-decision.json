@@ -1,0 +1,7 @@
+{
+  "decision": "Mantén sólo las correcciones confirmadas por ambas revisiones",
+  "authorized_ids": ["JD-01", "JD-02", "JD-03"],
+  "excluded_ids": ["S-01", "S-02", "S-03", "S-04", "S-05"],
+  "consequence": "No se amplía el alcance. Los cinco hallazgos de un solo juez quedan sin corregir y requieren decisión posterior. El problema del gateway impide recomendar publicación con cobros reales.",
+  "delivery": "Sin subida, PR remoto, despliegue o activación de cobros reales."
+}

@@ -16,10 +16,9 @@ export default function HostSpaceEditor() {
   const existing = useQuery(() => api.getSpace(id), [id], { enabled: !isNew });
 
   const submit = async (payload) => {
-    if (isNew) await api.createHostSpace(payload);
-    else await api.updateSpace(id, payload);
+    const result = isNew ? await api.createHostSpace(payload) : await api.updateSpace(id, payload);
     invalidate();
-    showToast(isNew ? 'Espacio publicado. Ya aparece en el mapa.' : 'Cambios guardados');
+    showToast(isNew ? (result.status === 'published' ? 'Espacio publicado' : 'Espacio enviado a revisión') : 'Cambios guardados');
     router.back();
   };
 
@@ -34,7 +33,7 @@ export default function HostSpaceEditor() {
           mode={isNew ? 'create' : 'host-edit'}
           destinations={destinations.data}
           onSubmit={submit}
-          submitLabel={isNew ? 'Publicar en el mapa' : 'Guardar cambios'}
+          submitLabel={isNew ? 'Enviar espacio' : 'Guardar cambios'}
         />
       ) : failed ? (
         <ErrorState error={failed} onRetry={() => (destinations.error ? destinations.reload() : existing.reload())} />

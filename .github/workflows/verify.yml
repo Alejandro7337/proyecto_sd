@@ -1,0 +1,82 @@
+name: Verificar Tu Espacio
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verificar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  servicios:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tuespacio
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: python scripts/verificar.py --integration --docker
+      - name: Exigir ejecución de todos los grupos solicitados
+        run: python -c "import json; r=json.load(open('artifacts/verification/report.json')); assert r['completed'], r"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: verificaciones-servicios
+          path: tuespacio/artifacts/verification/
+          retention-days: 14
+
+  expo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tuespacio/app
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tuespacio/app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run check
+
+  navegador:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tuespacio
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install websocket-client
+      - run: python -m server.tests.browser_check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: capturas-navegador
+          path: tuespacio/artifacts/screenshots/
+          retention-days: 14

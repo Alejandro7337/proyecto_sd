@@ -1,0 +1,401 @@
+{
+  "identity": "37bdef4c5a51ce08278e29b62b4525bba02014e3ce5431b68c52b2200504c984",
+  "files": [
+    {
+      "path": "DESIGN.md",
+      "sha256": "b6e87ed5a8f12467d4afc38e7635f9fd8c4420df4fcb2736c849e0b393bb0403"
+    },
+    {
+      "path": "PRODUCT.md",
+      "sha256": "2267e80cf68a0be8d9fa525215e02ef6c695b5d8480bd6b1956bf08d419d0885"
+    },
+    {
+      "path": "tuespacio/.env.example",
+      "sha256": "2dca191246fa35e4d273b9e4491c9234c464ab387636965ce201b21dbcf0cb15"
+    },
+    {
+      "path": "tuespacio/Dockerfile",
+      "sha256": "ec3d9a67e257fece454ca28bd0007d8dc96afca76472f8647f77c5f39f573fbf"
+    },
+    {
+      "path": "tuespacio/README.md",
+      "sha256": "eb502679201e3c18365dab413a45a4842e841e6ac6f622f98ef49e2cbfd02525"
+    },
+    {
+      "path": "tuespacio/app/AGENTS.md",
+      "sha256": "b7d381dd55800d242252e8bf89a40b026586d254e34908210931bc35582396a3"
+    },
+    {
+      "path": "tuespacio/app/package.json",
+      "sha256": "8e80c51d509d1892549a61159aa0fb58579956e53f301eccf5ac00f16f6af72d"
+    },
+    {
+      "path": "tuespacio/app/scripts/mock-loader.mjs",
+      "sha256": "ed8a5e9fef5e809ba8efc8f1dfa4a2d5c9a24cc9a3718ab47fe558debbbc4d2a"
+    },
+    {
+      "path": "tuespacio/app/scripts/mock.test.mjs",
+      "sha256": "e348271fcb8a1ecdc3c2ec04ab7a6fabdb024194b76d13ccdf6bfd99a0bb0e52"
+    },
+    {
+      "path": "tuespacio/app/scripts/register-loader.mjs",
+      "sha256": "3ff2128f8f687fb66fc0aa9ae20154515c5b87c4d55161e84bbd748d2a0649be"
+    },
+    {
+      "path": "tuespacio/app/scripts/transport.test.mjs",
+      "sha256": "f84f11f55ac8215b22909cb0f242db51ecb1c4ecdbd468e1d9f7d9607149bf38"
+    },
+    {
+      "path": "tuespacio/app/src/api/errors.js",
+      "sha256": "556ac98b33372d2e08952d1fca260a5f7fd289627f8b64f482fe40fc71fd3e36"
+    },
+    {
+      "path": "tuespacio/app/src/api/index.js",
+      "sha256": "22962b497f94fe4d3bb0bdd6d6cb79f28d860e396f1a31e4b79e8a792970e719"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/db.js",
+      "sha256": "3801efa0a73b261952a6b36e2d60c6ea461641fc36e959d60e2d8f04ffadadc1"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/demoControls.js",
+      "sha256": "37520f9ba70398d9d2dfa761f7faa4a20651085cd6a18dc4f83c7825cfcb07a2"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/router.js",
+      "sha256": "0c609bf588a206694b47842cefc587ce6ca17ef25efd25136de2c0649b0abf43"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/seed.js",
+      "sha256": "a5263589655a39a7fc171928936441e08c2bf0fdde465e6e282390c2115dc98a"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/services/auth.js",
+      "sha256": "a5d8ff5ec0ca543b3d4f0dadd3771162bb63ba9eb52eaf115c698388007b553f"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/services/catalog.js",
+      "sha256": "fe2f050d2c4fdfce92d6816e744c985aebc4c36ca8d90b6e38bf571b8d60d539"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/services/panel.js",
+      "sha256": "97cd965c0b961f64fae87e280f40e5f07e1b5fc873fe828d68aa1cc6fa4e8d7e"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/services/payments.js",
+      "sha256": "f8ec0ab4466f6249b641a380795d093a89911753e0706acab8ec552bdd908ac9"
+    },
+    {
+      "path": "tuespacio/app/src/api/mock/services/reservations.js",
+      "sha256": "1c4d2ae1f502d175f6c41c1ff70b49a0a788ef016668e98204e3e9354703795c"
+    },
+    {
+      "path": "tuespacio/app/src/api/transport.js",
+      "sha256": "f2a5089e28019d6092cf91c758e729eb473680e6c1416bb822cebe3d94674e73"
+    },
+    {
+      "path": "tuespacio/app/src/app/_layout.js",
+      "sha256": "acca7cea91f89039873cd4263a431752b85608da9148ac771221ef76e05147e9"
+    },
+    {
+      "path": "tuespacio/app/src/app/demo.js",
+      "sha256": "165d972ec80d1d0011d4d50f2e8ba122dfeb7d1fcdeac77ce4ea7f43fe90cae0"
+    },
+    {
+      "path": "tuespacio/app/src/app/driver/_layout.js",
+      "sha256": "5a053c50bd065574fe32e20b5f634587ea21c051eebc29a07d5db1fa41d71f89"
+    },
+    {
+      "path": "tuespacio/app/src/app/driver/index.js",
+      "sha256": "4733e92835f5c2be5a411568248eb96255ec6731d91c427f05a1abc48d107961"
+    },
+    {
+      "path": "tuespacio/app/src/app/driver/profile.js",
+      "sha256": "56d4313aa53f81109dc197d804cb2ead7ac41c3ee00826e32135ba707a214f14"
+    },
+    {
+      "path": "tuespacio/app/src/app/driver/reservations.js",
+      "sha256": "8ba85bfcdec6ac06c85a40a8d492aeac4d615053e5cba687b57930ca6e2b8087"
+    },
+    {
+      "path": "tuespacio/app/src/app/host/_layout.js",
+      "sha256": "c5a25b0f883f6927b186931a2e162c60431d5ea7151f7ee245fc869fd636354c"
+    },
+    {
+      "path": "tuespacio/app/src/app/host/bookings.js",
+      "sha256": "9b258289f37a9f5d38878a763274d57b6554df0b2cef28b0753495a08ba669fa"
+    },
+    {
+      "path": "tuespacio/app/src/app/host/earnings.js",
+      "sha256": "8ad68fb99b3e0f1a6ccac244f36b5451e84933fde7db49569a5a12f2dce2beeb"
+    },
+    {
+      "path": "tuespacio/app/src/app/host/index.js",
+      "sha256": "abe726609e7ac23a25ab8bd6a6804987b58659a869f201d27627bc547d7cd15a"
+    },
+    {
+      "path": "tuespacio/app/src/app/host/profile.js",
+      "sha256": "c11e3d154304e3df9ed70901688d50ebcdaa3900557c30ae1fd298915e33db99"
+    },
+    {
+      "path": "tuespacio/app/src/app/host-space/[id].js",
+      "sha256": "3dac0b49505bde5c910583ed02c0a5ed73b034ae4a8af8674fb07199989574f5"
+    },
+    {
+      "path": "tuespacio/app/src/app/index.js",
+      "sha256": "d6b3b5e8ce238a739d254bdc17e49531130a10fb43a0306837c4f310887c7688"
+    },
+    {
+      "path": "tuespacio/app/src/app/login.js",
+      "sha256": "45abedbdc96fbb507bd61ccf4714e7666465cb23e0d1930fd1724738ba65eb6a"
+    },
+    {
+      "path": "tuespacio/app/src/app/owner/_layout.js",
+      "sha256": "7b7eeea05061f2aa944e8a286f43720a523394a80aab6f510b974a21e63335dc"
+    },
+    {
+      "path": "tuespacio/app/src/app/owner/bookings.js",
+      "sha256": "3bda2d39172f0224f232340fec532daf1a0def0a148d630cbe483bb5113ad3dd"
+    },
+    {
+      "path": "tuespacio/app/src/app/owner/index.js",
+      "sha256": "861a10e2f434a05cb4fe5af1ab06e23dac4c02b3eb5cf0f6c54870535282d9f6"
+    },
+    {
+      "path": "tuespacio/app/src/app/owner/profile.js",
+      "sha256": "7e368bd386aeac0ee820831a0fc48b635fb19281c6dc2750ad8d3bc0ee04fa81"
+    },
+    {
+      "path": "tuespacio/app/src/app/owner/settings.js",
+      "sha256": "d4a29f8d36f78b5c6786bb8bdf626f50a73cd13d87f21319125364ff3a68b781"
+    },
+    {
+      "path": "tuespacio/app/src/app/register.js",
+      "sha256": "a220b96e06b09970a41a1ae464930a378e797d99c92dfed3e74ce4af370a7a2e"
+    },
+    {
+      "path": "tuespacio/app/src/app/reservation/[id].js",
+      "sha256": "88dab6da83bfbdaba6153800ac501ac4ea5df4e5d8068a6be6382deebc23c0d6"
+    },
+    {
+      "path": "tuespacio/app/src/app/reserve/[id].js",
+      "sha256": "0b2cf741341a5f33c341c1a2008a695e56562ae9debf1b301472435195b1531b"
+    },
+    {
+      "path": "tuespacio/app/src/app/settings.js",
+      "sha256": "71a0b620d851d22d49d9951362acd52f72884d8dde7a0f594db89a12c7aaebc0"
+    },
+    {
+      "path": "tuespacio/app/src/app/space/[id].js",
+      "sha256": "0513f3236b051a56b7445023f3e750397e5098738f9e6c8b83c6c8ff3baa0039"
+    },
+    {
+      "path": "tuespacio/app/src/app/welcome.js",
+      "sha256": "e1c4d913883e9ac2fe9170b74fe7ea46e584fed45da861873b74c4492b1ded06"
+    },
+    {
+      "path": "tuespacio/app/src/components/BookingList.js",
+      "sha256": "0e4006e3e192d24af98321f92514a3b4fcfa09c3957aee76e7ecf9eba4971f03"
+    },
+    {
+      "path": "tuespacio/app/src/components/ProfileScreen.js",
+      "sha256": "269b1f9f5f0e18129918ea72d433ba7d78ea593973eef3f5f0833f04728557db"
+    },
+    {
+      "path": "tuespacio/app/src/components/RoleTabs.js",
+      "sha256": "cd7716c7864f81bc7b4da618b4091f5cb5466cc750daa57ec37448f37a610452"
+    },
+    {
+      "path": "tuespacio/app/src/components/SchematicMap.js",
+      "sha256": "d1c184b49dbc2ed3ff2cacc01d42319b122db1462656e81ed6987d6f31e58490"
+    },
+    {
+      "path": "tuespacio/app/src/components/SpaceForm.js",
+      "sha256": "52908494d7f45e1ec930882356bd7069130145ee65dea25f9346ac856fd84233"
+    },
+    {
+      "path": "tuespacio/app/src/components/Toast.js",
+      "sha256": "5ddffa1502ca0282f579ab03ef28698419c4c34394ed00cfc1fc88694524b388"
+    },
+    {
+      "path": "tuespacio/app/src/components/layout.js",
+      "sha256": "81137b5505a0399885a1077d37b02fb0cb99187be33b7de3aee24ec8fef96842"
+    },
+    {
+      "path": "tuespacio/app/src/components/parking.js",
+      "sha256": "595bf440c13c7a25fa76ea3a2ab56c2cb77b6e415e6ef49aac57758a0ded7cf9"
+    },
+    {
+      "path": "tuespacio/app/src/components/states.js",
+      "sha256": "fc47f99426d2e294c1b85da2b8a1cc486f9b189170ccbc5b99d01f295e38c57f"
+    },
+    {
+      "path": "tuespacio/app/src/components/ui.js",
+      "sha256": "85c22640cd98cae3097fbbd3c663666b2365a304de6a964c40c3dbda8d73b591"
+    },
+    {
+      "path": "tuespacio/app/src/domain/rules.js",
+      "sha256": "1700fda3ab8f9facac9a02bbbf0f6dae2a6eae16302b05c957ee35a1d9e32fa6"
+    },
+    {
+      "path": "tuespacio/app/src/i18n.js",
+      "sha256": "278bc63261ee29974ccce034846a9676ca7e405b036c9feadd7cabaae358c764"
+    },
+    {
+      "path": "tuespacio/app/src/state/AppContext.js",
+      "sha256": "71631322aa67c6e6bd69add751b89f8aa246269b00cc87fa02e6c1bfb1a768dd"
+    },
+    {
+      "path": "tuespacio/app/src/state/Preferences.js",
+      "sha256": "3b50f059b47cd52c6e4087fa8996cecc6017055b3744c005dc91f9ff0f6e0d9d"
+    },
+    {
+      "path": "tuespacio/app/src/state/useQuery.js",
+      "sha256": "c284670b230e1389aef84e9d2048beede3336a3e7588e51bf3dfac7d9e7d79c0"
+    },
+    {
+      "path": "tuespacio/app/src/theme.js",
+      "sha256": "1c4f89a712e3780fa18f9ee74c4666e04fb6b40a382713ed27da57e859e20a2c"
+    },
+    {
+      "path": "tuespacio/app/src/utils/format.js",
+      "sha256": "d6170dccdc81938662c536a295224c0a7b98356f26cf39e587edc7604ee028bc"
+    },
+    {
+      "path": "tuespacio/compose.yaml",
+      "sha256": "44a279390241f9f26d98fb2fa2a00fd4612b10ab4a98eeed68f8ec5f597bdcfe"
+    },
+    {
+      "path": "tuespacio/docs/PAGOS_Y_DESTINOS.md",
+      "sha256": "68f443ccc423a61bc4b02d57dac5a35f39d9aa61e2c282cdbfea56b5c09dcbb6"
+    },
+    {
+      "path": "tuespacio/server/__init__.py",
+      "sha256": "08aa26f0d49b9c8d55c45c19942fe8bb3bcee61c72c78e8d749f74c0fd9b533c"
+    },
+    {
+      "path": "tuespacio/server/bookings.py",
+      "sha256": "0456a88943975c63958e67de687df55e7de816bf5efecf977177bb1fd9954f15"
+    },
+    {
+      "path": "tuespacio/server/common.py",
+      "sha256": "8c93cede6f9a64500646412035d092f7cf915cef1c220a1d6f95ae48dab8df4c"
+    },
+    {
+      "path": "tuespacio/server/data/seed.json",
+      "sha256": "012c2237dd7d0753f8f36596671a03c1fedeb36e9f3c89c5872f5b17984819bf"
+    },
+    {
+      "path": "tuespacio/server/identity.py",
+      "sha256": "c62ac8e2baa41eff6208fad71d5043da5a39280af0975fc9c19c089f236b24a7"
+    },
+    {
+      "path": "tuespacio/server/inventory.py",
+      "sha256": "692bc457b5b99ac281f3b925307bb10e4c0bd617bd290ed20f2b35dcdd3a7d2c"
+    },
+    {
+      "path": "tuespacio/server/locations.py",
+      "sha256": "c10056c9c4e336e3c50e317a8d4ab3e276e491591ac571edc7d1d600a1a9f28c"
+    },
+    {
+      "path": "tuespacio/server/mercadopago.py",
+      "sha256": "5d45d40a57caf51a29baa8afc6c02c59d35ecfd93fec0b8d7cf1aa28911a9fe8"
+    },
+    {
+      "path": "tuespacio/server/payments.py",
+      "sha256": "69d0ff067cda4fc209c7de22c354ab239247d9e6784ea596044f4a1539fd68a6"
+    },
+    {
+      "path": "tuespacio/server/receipts.py",
+      "sha256": "2e15878c13b5f8a302dc548f2d055cba4c58cafff8720f2e13dc156cba3bd310"
+    },
+    {
+      "path": "tuespacio/server/regions.json",
+      "sha256": "ea45a15a95a0554fdd7b5fa04cfea6dfa7d1a96bafab48f593ec73e0405908b3"
+    },
+    {
+      "path": "tuespacio/server/run.py",
+      "sha256": "412ff66ad1036f0e2036854199d72ebb7ef56c3a0f06c87ad867b8cdfc4bdf81"
+    },
+    {
+      "path": "tuespacio/server/service.py",
+      "sha256": "70d18a0d118bf6482e60aaca16ad23fea3432cf32bfb0eedf716831ad739ad19"
+    },
+    {
+      "path": "tuespacio/server/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tuespacio/server/tests/browser_check.py",
+      "sha256": "4efba02bc891fc1018c12971a2b3fd00ae292193c7e1f4cee4af83045ffd5c46"
+    },
+    {
+      "path": "tuespacio/server/tests/http_smoke.py",
+      "sha256": "750a01c799462acc84326cc2708b6fcc67289612f0d0e142e613ba29b259b3f0"
+    },
+    {
+      "path": "tuespacio/server/tests/locale.test.mjs",
+      "sha256": "edd3ca6599a598115a5aa3f066c9c304331b54747f8b0f3c1ca309b68956c8f9"
+    },
+    {
+      "path": "tuespacio/server/tests/test_checkout.py",
+      "sha256": "251fda8469faee795cd751be7b9f3149a8b422acda206782d5573f867b60a73c"
+    },
+    {
+      "path": "tuespacio/server/tests/test_http_contract.py",
+      "sha256": "c4edd2c51fcba3ca0c62328b81a21e09a32b63eacfd26da45de86915a4d3fc78"
+    },
+    {
+      "path": "tuespacio/server/tests/test_system.py",
+      "sha256": "73fc772587d4ae4d50e4b8d3f3907407f58068012b4288e6449c39c58da7a471"
+    },
+    {
+      "path": "tuespacio/server/tests/ui_bridge.py",
+      "sha256": "f862a88193dcf3db8c1f549f26207ed31a13db46ce5143c10b884c55931ed490"
+    },
+    {
+      "path": "tuespacio/server/tests/views.test.mjs",
+      "sha256": "91d50fcbaa1d0fedf8d7427ba359b7e9bd67552af3d04529d70a0f879cd49404"
+    },
+    {
+      "path": "tuespacio/web/app.js",
+      "sha256": "d644cf270c87d64711cef0d8dec23db5b09166595f4e4b0ca20a5c9d5da657d2"
+    },
+    {
+      "path": "tuespacio/web/favicon.svg",
+      "sha256": "7bcb1900f5971d8c36fbf1e15f822ee0591ed8630feda4d859ea786781fc8f60"
+    },
+    {
+      "path": "tuespacio/web/format.js",
+      "sha256": "f783ee80d668685904816a4de210f0837d69493e9aa1f19f00be7f8c4c2d1209"
+    },
+    {
+      "path": "tuespacio/web/i18n.js",
+      "sha256": "d355b1053d88e16b1e808e09989ab71dc16d9dbc2d573f387115d4ac64c45700"
+    },
+    {
+      "path": "tuespacio/web/icons.js",
+      "sha256": "23f0424c16cff11b6b1204ee43917ffdb87127b2a3ace3f57f0ff556ebcae842"
+    },
+    {
+      "path": "tuespacio/web/index.html",
+      "sha256": "22c384e65f5f2bf591ebadd4e906cd8ffc90c5162ac569009003e9af0dcd6d24"
+    },
+    {
+      "path": "tuespacio/web/package.json",
+      "sha256": "f82431d6300c50c3fc5248f6be78c8a5bd8197e5aed20ec9c364faeee6e42d47"
+    },
+    {
+      "path": "tuespacio/web/receipt.css",
+      "sha256": "7b6b95648febf4bb15daa5294f27737a9a7ac5bc4a085f10031f9ed5e7696638"
+    },
+    {
+      "path": "tuespacio/web/storage.js",
+      "sha256": "5430bf3d1888ecea9cec0942fdc59621e04012545c01a3b01ef426db0505b78d"
+    },
+    {
+      "path": "tuespacio/web/styles.css",
+      "sha256": "1886a54166c4f38a190086be13f7aa9466a9d6495be30a0387bc8bd26c9fe855"
+    }
+  ]
+}

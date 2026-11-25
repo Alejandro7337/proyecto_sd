@@ -1,0 +1,104 @@
+{
+  "round": 2,
+  "baseline": "/tmp/tu-espacio-before-round2",
+  "delta_sha256": "c639a67bc7133ab457772fe068d6b4635b36afd5a8e5ce7fad7fd98e8495bd3c",
+  "changed_files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "0682d9a74cb11159dea399a026d99de4c0728e76686e13d98d12c0b3525e66fc"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "e6c09e0efe29202884f6ed0398ca41a67ebfbc47f679e42002e7ac612c398531"
+    },
+    {
+      "path": "Caddyfile",
+      "sha256": "9d580e8578f98fbc810bdee4397079ee4b79a6e3df5c359fe742cd8ee10978a5"
+    },
+    {
+      "path": "app/scripts/mock.test.mjs",
+      "sha256": "482db4ab772c59b2e99d275883074b90d686eaf3b0e0cc8afc1f68fa9e6cc700"
+    },
+    {
+      "path": "app/src/app/host-space/[id].js",
+      "sha256": "e7a44d3d3c55434eb725c5f5f46fc16d06f10c3e1b3fd0eae06f834e010d7b0e"
+    },
+    {
+      "path": "app/src/components/SpaceForm.js",
+      "sha256": "d1d9128d4070addb3680f47395f7ad528a2e5490026a2326a151f60defed20bb"
+    },
+    {
+      "path": "app/src/domain/spaceForm.js",
+      "sha256": "ea804df43cf8876e0ed9a4dc3deb21edaaf6afec685e642ae74e97ada7095fd6"
+    },
+    {
+      "path": "compose.production.yaml",
+      "sha256": "3f4a83f5de56d13be74a214de128a5f948eb248f3109252ae84077824a47fd70"
+    },
+    {
+      "path": "scripts/preparar-entrega.py",
+      "sha256": "f96d02b4f0e37bb5a56965d63c17f94893c51b5ec9f99facaba689b7d2119fb1"
+    },
+    {
+      "path": "server/admin.py",
+      "sha256": "fb63740fc9d42bb644d9029bfdaf7af8a3c92b21b1e21a3f890da012b756e998"
+    },
+    {
+      "path": "server/bookings.py",
+      "sha256": "70140b7fc09c86d431a6a87c3746cbd729f11085b93b9c74cd081a4ee6536cbe"
+    },
+    {
+      "path": "server/common.py",
+      "sha256": "d6d375563a802e164cc6ef872a853382a99a41e2de07c7deb5288a79680844ae"
+    },
+    {
+      "path": "server/identity.py",
+      "sha256": "91fa18c833c78e2cecee328cbd60f0549d24754db6570b99300c6426c602f689"
+    },
+    {
+      "path": "server/inventory.py",
+      "sha256": "c4a4d1a9ec75dd6d7f652173c32e6269f667f0df3db61c54f6a286d09dde64e0"
+    },
+    {
+      "path": "server/locations.py",
+      "sha256": "4bf633f29e298483e7a802a0ded6662f03c7099923ffd1c2067046c2b7a40b47"
+    },
+    {
+      "path": "server/mercadopago.py",
+      "sha256": "b3bd5634864e90f446d7029cad4d2168c38ea74b67468b7cad819e58d528c6bb"
+    },
+    {
+      "path": "server/run.py",
+      "sha256": "6161e9b01444b2a3c031d5b8c3f7aa32e6ec8e5a8cf81744586e0a0ff2688177"
+    },
+    {
+      "path": "server/service.py",
+      "sha256": "4e45b85eb3b68a346eac773737c200d5def77a7c72158749daa77e849c1c5534"
+    },
+    {
+      "path": "server/tests/test_admin.py",
+      "sha256": "2b3e78ad451df56fea3085e71f700b24a560876101e8eac1438bf6505f8abb17"
+    },
+    {
+      "path": "server/tests/test_checkout.py",
+      "sha256": "a4a2eb0efdbe6a1378027c5a3b9c1fd0d3e17fd18a838e8994e84432b5f64c38"
+    },
+    {
+      "path": "server/tests/test_http_contract.py",
+      "sha256": "a892bf1ed4eac65277fae79dffcedf01525b980e462fc51f3a5b5c46bc1f3e59"
+    },
+    {
+      "path": "server/tests/views.test.mjs",
+      "sha256": "45e90b4447f6ac39e66dde195276807df8db815dacec888844b25147965cf6bc"
+    },
+    {
+      "path": "web/app.js",
+      "sha256": "2b7f40f308f38bcb678974d7348c58d73857a0ab868093727111ed13fa09b08b"
+    },
+    {
+      "path": "web/i18n.js",
+      "sha256": "d226f278f3bbabac3a7fcc47225a38e5fe864ad924071590dbc4d67468e84fb8"
+    }
+  ],
+  "scope": "S-01..05, I-01..03, OPS-01..03 and fix-caused regressions; previous JD-01..03 remain in force."
+}

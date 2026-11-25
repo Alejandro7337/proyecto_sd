@@ -1,0 +1,6 @@
+{
+  "name": "tu-espacio-console",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node ../server/tests/locale.test.mjs" }
+}

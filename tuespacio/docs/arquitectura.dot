@@ -1,0 +1,31 @@
+digraph TuEspacio {
+  graph [rankdir=LR, bgcolor="white", pad="0.3", nodesep="0.35", ranksep="0.6", fontname="DejaVu Sans", fontsize=12, label="Tu Espacio · Regiones lógicas y servicios", labelloc=t];
+  node [shape=box, style="rounded,filled", fillcolor="#f4f6f1", color="#c8d5cb", fontcolor="#18352c", fontname="DejaVu Sans", fontsize=10, margin="0.16,0.12"];
+  edge [color="#6c8477", fontname="DejaVu Sans", fontsize=8, fontcolor="#40584b"];
+  clients [label="Web + Expo\nConductores y propietarios", fillcolor="#e7efdf"];
+  subgraph cluster_co {
+    label="CO · Bogotá · un contenedor / seis procesos"; color="#91ae99"; style=rounded;
+    gateway [label="Gateway :8080\nSesión + permisos"];
+    identity [label="Identidad\nusuarios / sesiones"];
+    inventory [label="Inventario\ncupos / holds"];
+    bookings [label="Reservas\nsaga / journal / outbox", fillcolor="#dcebcf"];
+    payments [label="Pagos de prueba\nautorizar / capturar / reembolsar"];
+    broker [label="Broker\neventos / deduplicación"];
+    gateway -> identity [label="HTTP / JSON"];
+    gateway -> inventory;
+    gateway -> bookings;
+    bookings -> inventory [label="hold / confirmar / liberar"];
+    bookings -> payments [label="ID estable"];
+    bookings -> broker [label="outbox + ACK"];
+  }
+  clients -> gateway [label="HTTP :8080"];
+  br [label="BR · São Paulo :8090\n6 procesos / volumen propio"];
+  us [label="US · New York :8100\n6 procesos / volumen propio"];
+  fr [label="FR · Paris :8110\n6 procesos / volumen propio"];
+  jp [label="JP · Tokio :8120\n6 procesos / volumen propio"];
+  clients -> {br us fr jp} [label="cambio de gateway"];
+  storage [shape=cylinder, label="SQLite por servicio y región\nNingún servicio abre la base de otro", fillcolor="#f8f5eb"];
+  inventory -> storage [style=dashed, arrowhead=none];
+  bookings -> storage [style=dashed, arrowhead=none];
+  payments -> storage [style=dashed, arrowhead=none];
+}

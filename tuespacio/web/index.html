@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#112b2b" />
+    <meta
+      name="description"
+      content="Tu Espacio: encuentra y reserva un parqueadero cerca de tu destino. Proyecto de Sistemas Distribuidos."
+    />
+    <title>Tu Espacio · Parquea con un plan</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Saltar al contenido</a>
+    <div id="app">
+      <main id="main" class="boot">
+        <span class="brand-mark">P<span>↗</span></span>
+        <h1>Tu Espacio</h1>
+        <p>Cargando tu región…</p>
+      </main>
+    </div>
+    <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

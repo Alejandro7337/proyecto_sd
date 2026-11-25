@@ -3,7 +3,7 @@
 import { ActivityIndicator, Pressable, Switch, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { font, radius, softShadow, space } from '../theme';
+import { font, radius, space } from '../theme';
 import { usePreferences, useStyles, useTheme } from '../state/Preferences';
 
 // Los íconos junto a un texto visible son decorativos: se ocultan a los lectores de pantalla.
@@ -27,7 +27,7 @@ export function Logo({ size = 40, tone = 'navy' }) {
       style={{ width: size, height: size, borderRadius: size * 0.4, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', borderWidth: c.dark && tone === 'navy' ? 1 : 0, borderColor: c.borderStrong }}
       {...decorative}
     >
-      <MaterialCommunityIcons name="parking" size={size * 0.6} color={c.white} />
+      <MaterialCommunityIcons name="parking" size={size * 0.6} color={c.dark && tone === 'accent' ? c.navy : c.white} />
     </View>
   );
 }
@@ -59,7 +59,7 @@ export function Button({ title, onPress, variant = 'primary', icon, iconRight, l
       ) : (
         <View style={styles.buttonInner}>
           {icon ? <Ionicons name={icon} size={iconSize} color={v.fg} {...decorative} /> : null}
-          <Text style={[styles.buttonText, size === 'sm' && styles.buttonTextSm, { color: v.fg }]} numberOfLines={1}>
+          <Text style={[styles.buttonText, size === 'sm' && styles.buttonTextSm, { color: v.fg, flexShrink: 1, textAlign: 'center' }]}>
             {title}
           </Text>
           {iconRight ? <Ionicons name={iconRight} size={iconSize} color={v.fg} {...decorative} /> : null}
@@ -72,7 +72,7 @@ export function Button({ title, onPress, variant = 'primary', icon, iconRight, l
 const buttonVariants = (c) => ({
   primary: { bg: c.action, pressed: c.actionPressed, fg: c.onAction, border: c.action, ripple: 'rgba(255,255,255,0.2)' },
   dark: { bg: c.action, pressed: c.actionPressed, fg: c.onAction, border: c.action, ripple: 'rgba(255,255,255,0.2)' },
-  accent: { bg: c.accent, pressed: '#2C8CE6', fg: c.navy, border: c.accent, ripple: 'rgba(255,255,255,0.2)' },
+  accent: { bg: c.accent, pressed: c.actionPressed, fg: c.dark ? c.navy : c.white, border: c.accent, ripple: 'rgba(255,255,255,0.2)' },
   secondary: { bg: c.card, pressed: c.surface, fg: c.text, border: c.border, ripple: c.surfacePressed },
   ghost: { bg: 'transparent', pressed: c.primarySoft, fg: c.primary, border: 'transparent', ripple: c.primarySoft },
   danger: { bg: c.card, pressed: c.dangerSoft, fg: c.danger, border: c.dark ? c.border : '#F5C2C2', ripple: c.dangerSoft },
@@ -87,6 +87,7 @@ export function Card({ children, style, onPress, selected, flat }) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       android_ripple={{ color: c.surfacePressed }}
       style={({ pressed }) => [...content, pressed && !selected && { backgroundColor: c.surface }]}
     >
@@ -344,10 +345,10 @@ export const makeStyles = (c) => ({
   body: { fontSize: font.sm, color: c.text, lineHeight: 21 },
   muted: { fontSize: font.sm, color: c.textMuted, lineHeight: 21 },
   small: { fontSize: font.xs, color: c.textMuted, lineHeight: 17 },
-  h1: { fontSize: font.xxl, fontWeight: '900', color: c.heading, letterSpacing: -0.8, lineHeight: 36 },
-  h2: { fontSize: font.xl, fontWeight: '900', color: c.heading, letterSpacing: -0.4 },
-  h3: { fontSize: font.lg, fontWeight: '900', color: c.heading, letterSpacing: -0.2 },
-  title: { fontSize: font.md, fontWeight: '800', color: c.text },
+  h1: { fontSize: font.xxl, fontWeight: '700', color: c.heading, letterSpacing: -0.8, lineHeight: 36 },
+  h2: { fontSize: font.xl, fontWeight: '700', color: c.heading, letterSpacing: -0.4 },
+  h3: { fontSize: font.lg, fontWeight: '700', color: c.heading, letterSpacing: -0.2 },
+  title: { fontSize: font.md, fontWeight: '600', color: c.text },
   eyebrow: { fontSize: 11, fontWeight: '800', color: c.textMuted, letterSpacing: 1.6, textTransform: 'uppercase' },
   brand: { fontSize: 10, fontWeight: '800', color: c.accent, letterSpacing: 1.8, textTransform: 'uppercase' },
 
@@ -360,7 +361,7 @@ export const makeStyles = (c) => ({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  buttonSm: { minHeight: 44, paddingHorizontal: space.md, borderRadius: radius.sm },
+  buttonSm: { minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.sm },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   buttonText: { fontSize: font.md, fontWeight: '700' },
   buttonTextSm: { fontSize: font.sm },
@@ -373,7 +374,6 @@ export const makeStyles = (c) => ({
     borderColor: c.border,
     padding: space.lg,
     overflow: 'hidden',
-    ...(c.dark ? null : softShadow),
   },
   cardFlat: { backgroundColor: c.surface, borderColor: 'transparent', shadowOpacity: 0, elevation: 0 },
   cardSelected: { borderColor: c.accent, borderWidth: 2, backgroundColor: c.primarySoft },
@@ -386,7 +386,7 @@ export const makeStyles = (c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 40,
+    minHeight: 48,
     paddingHorizontal: 16,
     borderRadius: radius.pill,
     borderWidth: 1,

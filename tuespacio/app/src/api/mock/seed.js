@@ -128,6 +128,7 @@ export function createSeed() {
     },
   ];
 
+  spaces.forEach((s) => { s.held = { ...s.held }; });
   const byId = Object.fromEntries(spaces.map((s) => [s.id, s]));
   const reservation = (id, spaceId, driverName, driverId, vehicle, startOffsetMin, durationMin, status, code) => ({
     id, code, spaceId, driverId, driverName, vehicle, status, durationMin,

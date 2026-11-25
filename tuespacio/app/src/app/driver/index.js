@@ -10,7 +10,7 @@ import { SchematicMap } from '../../components/SchematicMap';
 import { api } from '../../api';
 import { useApp } from '../../state/AppContext';
 import { useQuery } from '../../state/useQuery';
-import { VEHICLES } from '../../domain/rules';
+import { VEHICLES, openReservation } from '../../domain/rules';
 import { font, radius, softShadow, space } from '../../theme';
 import { usePreferences, useStyles } from '../../state/Preferences';
 
@@ -27,13 +27,14 @@ export default function Explore() {
   const { colors, t } = usePreferences();
   const styles = useStyles(makeStyles);
   const [query, setQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [destination, setDestination] = useState(null);
   const [vehicle, setVehicle] = useState(user.vehicle || 'car');
   const [filters, setFilters] = useState({ covered: false, noKeys: false, kind: null });
   const [sort, setSort] = useState('distance');
   const [selectedId, setSelectedId] = useState(null);
 
-  const suggestions = useQuery(() => api.searchDestinations(query), [query], { enabled: !destination });
+  const suggestions = useQuery(() => api.searchDestinations(searchQuery), [searchQuery], { enabled: !destination });
   const upcoming = useQuery(() => api.myReservations(), []);
   const spaces = useQuery(
     () => api.listSpaces({ destinationId: destination.id, vehicle, covered: filters.covered, noKeys: filters.noKeys, kind: filters.kind, sort }),
@@ -55,7 +56,7 @@ export default function Explore() {
     setSelectedId(null);
   };
 
-  const active = (upcoming.data || []).find((r) => r.status === 'confirmed' || r.status === 'active');
+  const active = openReservation(upcoming.data || []);
 
   if (!destination) {
     return (
@@ -73,7 +74,9 @@ export default function Explore() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Escribe una zona o destino"
+            placeholder="Dirección, barrio o lugar"
+            maxLength={180}
+            onSubmitEditing={() => { if (query.trim().length >= 3) setSearchQuery(query.trim()); }}
             placeholderTextColor={colors.textSubtle}
             style={styles.searchInput}
             returnKeyType="search"
@@ -86,6 +89,8 @@ export default function Explore() {
           ) : null}
         </View>
 
+        <Button title="Buscar dirección" icon="search" disabled={query.trim().length < 3} onPress={() => setSearchQuery(query.trim())} style={{ marginTop: space.md }} />
+        <Txt variant="small" style={{ marginTop: space.sm }}>© OpenStreetMap contributors · Photon</Txt>
         {active ? (
           <View style={{ marginTop: space.xxl }}>
             <Txt variant="eyebrow" style={{ marginBottom: space.sm }}>
@@ -96,20 +101,20 @@ export default function Explore() {
         ) : null}
 
         <Txt variant="eyebrow" style={{ marginTop: space.xxxl, marginBottom: space.xs }}>
-          {query ? 'Resultados' : 'Zonas piloto'}
+          {searchQuery ? 'Resultados de: ' + searchQuery : 'Sugerencias'}
         </Txt>
         {suggestions.loading && !suggestions.data ? (
           <LoadingState label="Buscando destinos…" />
         ) : suggestions.error ? (
           <ErrorState error={suggestions.error} onRetry={suggestions.reload} />
-        ) : suggestions.data.length === 0 ? (
+        ) : (suggestions.data || []).length === 0 ? (
           <EmptyState
             icon="location-outline"
             title="No encontramos ese destino"
-            message="Por ahora Tu Espacio opera en 3 zonas piloto de una ciudad. Prueba con “empresarial”, “universitaria” o “clínicas”."
+            message="Añade la ciudad o prueba con una dirección más completa. La disponibilidad depende de los parqueaderos registrados."
           />
         ) : (
-          suggestions.data.map((d) => (
+          (suggestions.data || []).map((d) => (
             <Pressable
               key={d.id}
               onPress={() => pickDestination(d)}

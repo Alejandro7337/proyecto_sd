@@ -9,8 +9,11 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "check": "expo export --platform android --output-dir dist",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test:mock": "node --import ./scripts/register-loader.mjs ./scripts/mock.test.mjs",
+    "test:transport": "node --import ./scripts/register-loader.mjs ./scripts/transport.test.mjs"
   },
+  "engines": { "node": ">=22.13.0" },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
     "expo": "~58.0.19",

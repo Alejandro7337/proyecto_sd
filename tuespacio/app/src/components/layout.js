@@ -52,9 +52,6 @@ export function Header({ title, subtitle, back, onBack, right }) {
       ) : null}
       <Logo size={40} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.brand} numberOfLines={1}>
-          Tu Espacio
-        </Text>
         <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
           {title}
         </Text>
@@ -96,9 +93,9 @@ const makeStyles = (c) => ({
     paddingBottom: space.lg,
     backgroundColor: c.bg,
   },
-  backBtn: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
+  backBtn: { width: 48, height: 48, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
   brand: { fontSize: 10, fontWeight: '800', color: c.accent, letterSpacing: 1.8, textTransform: 'uppercase' },
-  title: { fontSize: font.lg, fontWeight: '900', color: c.heading, letterSpacing: -0.2, marginTop: 1 },
+  title: { fontSize: font.lg, fontWeight: '700', color: c.heading, letterSpacing: -0.2, marginTop: 1 },
   subtitle: { fontSize: font.xs, color: c.textMuted, marginTop: 1 },
   footer: {
     paddingHorizontal: space.lg,
