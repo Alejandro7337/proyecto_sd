@@ -1,0 +1,57 @@
+{
+  "target_identity": "37bdef4c5a51ce08278e29b62b4525bba02014e3ce5431b68c52b2200504c984",
+  "round": 2,
+  "fix_rounds": 2,
+  "scoped_rejudgments": 2,
+  "round_2_delta": "c639a67bc7133ab457772fe068d6b4635b36afd5a8e5ce7fad7fd98e8495bd3c",
+  "confirmed_fixed": [
+    "JD-01",
+    "JD-02",
+    "JD-03"
+  ],
+  "user_authorized_single_judge_fixed": [
+    "S-01",
+    "S-02",
+    "S-03",
+    "S-04",
+    "S-05"
+  ],
+  "info_fixed": [
+    "I-01",
+    "I-02",
+    "I-03"
+  ],
+  "remaining_severe": 0,
+  "contradictions": 0,
+  "round_2_info_count": 1,
+  "terminal_state": "escalated",
+  "scoped_rejudgment": "no severe findings; one packaging WARNING",
+  "post_review_delivery_fix": {
+    "file": "scripts/preparar-entrega.py",
+    "sha256": "f6dbffd9cd5bd46f74940210bebb71b6cc6cffce4098fcc9c5ba08bc305b9024",
+    "change": "Aplicar exclusión .env también al pase explícito de artefactos. No se abre tercera ronda. Se comprobará mediante marcador sintético y ZIP real.",
+    "verification": "Paquete real generado con dos marcadores .env privados en ambos directorios de artefactos; ninguno aparece en ZIP. Ajuste no reevaluado por jueces, sin tercera ronda."
+  },
+  "final_verification": {
+    "tests_passed": 101,
+    "template_assertions": 105,
+    "expo_syntax_files": 55,
+    "http_processes": "skipped: sockets blocked",
+    "compose": "development and production configuration validated",
+    "bank": "fixtures only",
+    "browser_and_expo_build": "unverified; environment restrictions/missing dependencies"
+  },
+  "skill_resolution": "paths-injected",
+  "release_authority": false,
+  "upload": {
+    "exit_code": 1,
+    "verified": false,
+    "reason": "api.github.com no conecta; github.com no resuelve en este entorno. El script ahora verifica la identidad del token antes de cambiar cuentas.",
+    "log": "artifacts/verification/upload.log"
+  },
+  "delivery_followup": {
+    "identity_tests": 4,
+    "status": "passed",
+    "change": "Verificar identidad remota antes de cambiar cuenta; regenerar parche antes de subir. Sin nueva ronda Judgment Day."
+  }
+}

@@ -10,6 +10,7 @@ import * as panel from './services/panel';
 
 const routes = [
   ['POST', '/auth/login', ({ body }) => auth.login(body)],
+  ['POST', '/auth/logout', () => ({ ok: true })],
   ['POST', '/auth/register', ({ body }) => auth.register(body)],
   ['GET', '/me', ({ user }) => auth.me(user)],
   ['PATCH', '/me', ({ user, body }) => auth.updateMe(user, body)],

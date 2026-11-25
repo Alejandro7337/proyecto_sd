@@ -54,11 +54,31 @@ export const AVAILABILITY = {
 };
 
 export const RESERVATION_STATUS = {
+  pending: { label: 'Procesando reserva', tone: 'warning' },
+  awaiting_payment: { label: 'Pago pendiente', tone: 'warning' },
+  compensating: { label: 'Revirtiendo reserva', tone: 'warning' },
+  cancelling: { label: 'Cancelando', tone: 'warning' },
+  checking_out: { label: 'Registrando salida', tone: 'warning' },
   confirmed: { label: 'Confirmada', tone: 'info' },
   active: { label: 'En curso', tone: 'success' },
   completed: { label: 'Finalizada', tone: 'neutral' },
   cancelled: { label: 'Cancelada', tone: 'danger' },
+  failed: { label: 'No completada', tone: 'danger' },
 };
+
+export function reservationStatus(status) {
+  return Object.hasOwn(RESERVATION_STATUS, status)
+    ? RESERVATION_STATUS[status]
+    : { label: 'Estado por actualizar', tone: 'neutral' };
+}
+
+export function reservationTab(status) {
+  return ['completed', 'cancelled', 'failed'].includes(status) ? 'history' : 'current';
+}
+
+export function openReservation(reservations) {
+  return reservations.find((reservation) => reservationTab(reservation.status) === 'current');
+}
 
 export const ROLES = {
   driver: { label: 'Conductor', home: '/driver' },

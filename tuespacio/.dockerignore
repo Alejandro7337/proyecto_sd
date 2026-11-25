@@ -1,0 +1,8 @@
+app/
+documentos/
+.runtime/
+**/__pycache__/
+artifacts/
+
+.env*
+!.env.example

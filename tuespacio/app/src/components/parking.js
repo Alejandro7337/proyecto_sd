@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { font, radius, softShadow, space } from '../theme';
-import { AVAILABILITY, RATE_UNITS, RESERVATION_STATUS, SPACE_KINDS, VEHICLES } from '../domain/rules';
+import { AVAILABILITY, RATE_UNITS, reservationStatus, SPACE_KINDS, VEHICLES } from '../domain/rules';
 import { formatCOP, formatDistance, formatHeight, formatDay, formatTime, formatDuration } from '../utils/format';
 import { Badge } from './ui';
 import { usePreferences, useStyles, useTheme } from '../state/Preferences';
@@ -35,7 +35,7 @@ export function AvailabilityBadge({ availability, vehicle }) {
 }
 
 export function ReservationBadge({ status }) {
-  const meta = RESERVATION_STATUS[status];
+  const meta = reservationStatus(status);
   return <Badge label={meta.label} tone={meta.tone} />;
 }
 
@@ -209,7 +209,7 @@ export function ReservationCard({ r, onPress, showDriver, children, style }) {
   const c = useTheme();
   const { tones } = usePreferences();
   const styles = useStyles(makeStyles);
-  const tone = tones[RESERVATION_STATUS[r.status].tone] || tones.neutral;
+  const tone = tones[reservationStatus(r.status).tone] || tones.neutral;
   const body = (
     <>
       <View style={{ height: 6, backgroundColor: tone.solid }} />

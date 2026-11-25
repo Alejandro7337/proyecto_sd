@@ -1,0 +1,12 @@
+{
+  "findings": [],
+  "evidence": [
+    "Inspección acotada a ledger, decisión del usuario, delta inmutable, manifiesto y unidades de corrección.",
+    "SHA256 del delta verificado: 072657e9926335cd37cf29513056bf6fbe97cf1152353548ed2959d88d551a97.",
+    "JD-01 recupera providerId con cuerpo y clave persistidos antes de refund/void; pruebas nuevas cubren vencimiento, reinicio y reversión.",
+    "JD-02 mantiene awaiting_payment y recuperación en Actuales y acceso destacado.",
+    "JD-03 usa lookup propio con fallback en Badge y Card.",
+    "Comprobaciones Node independientes de helpers reconstruidos desde delta: estados conocidos, futuros, null, undefined, toString y __proto__ pasaron.",
+    "Sin defectos nuevos dentro del alcance. Sin navegador, dispositivo, HTTP real ni banco."
+  ]
+}

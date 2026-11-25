@@ -1,0 +1,396 @@
+--- before/app/scripts/mock.test.mjs
++++ after/app/scripts/mock.test.mjs
+@@ -1,13 +1,14 @@
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+ import { createReservation } from '../src/api/mock/services/reservations.js';
+ import { getDb, resetDb, freeFor } from '../src/api/mock/db.js';
+ import { faults } from '../src/api/mock/demoControls.js';
++import { reservationStatus, reservationTab, openReservation } from '../src/domain/rules.js';
+ 
+ const body = (key, patch = {}) => ({ spaceId: 's-emp-4', vehicle: 'car', startAt: new Date(Date.now() + 900000).toISOString(), durationMin: 60, idempotencyKey: key, ...patch });
+ const driver = () => getDb().users.find(u => u.id === 'u-driver');
+ const reset = () => { resetDb(); faults.nextReservation = 'none'; };
+ 
+ test('el mock no vende el último cupo dos veces', async () => {
+   reset();
+   const results = await Promise.allSettled(Array.from({ length: 10 }, (_, i) => createReservation(driver(), body('concurrency-' + i))));
+@@ -51,8 +52,41 @@
+   assert.equal(getDb().txLog.length, 0);
+ });
+ 
+ test('el precio cotizado debe coincidir antes de cobrar', async () => {
+   reset();
+   await assert.rejects(() => createReservation(driver(), body('quote-changed', { expectedAmount: 1 })), { code: 'PRICE_CHANGED' });
+   assert.equal(getDb().txLog.length, 0);
+ });
++
++test('una reserva de pago pendiente sigue accesible después de abandonar su detalle', () => {
++  const reservations = [{ id: 'r-paid-old', status: 'completed' }, { id: 'r-checkout', status: 'awaiting_payment' }];
++  const current = reservations.filter(r => reservationTab(r.status) === 'current');
++  const history = reservations.filter(r => reservationTab(r.status) === 'history');
++  assert.deepEqual(current.map(r => r.id), ['r-checkout']);
++  assert.deepEqual(history.map(r => r.id), ['r-paid-old']);
++  assert.equal(openReservation(reservations).id, 'r-checkout');
++});
++
++test('cada estado de recuperación conserva una ruta a su reserva y un texto visible', () => {
++  for (const status of ['pending', 'awaiting_payment', 'compensating', 'cancelling', 'checking_out', 'confirmed', 'active']) {
++    const booking = { id: 'r-' + status, status };
++    assert.equal(reservationTab(status), 'current', status);
++    assert.equal(openReservation([booking]), booking, status);
++    assert.equal(typeof reservationStatus(status).label, 'string', status);
++    assert.ok(reservationStatus(status).label.length > 0, status);
++  }
++});
++
++test('rechazos aparecen en el historial y estados desconocidos no rompen el badge ni desaparecen', () => {
++  for (const status of ['failed', 'completed', 'cancelled']) {
++    assert.equal(reservationTab(status), 'history', status);
++    assert.equal(openReservation([{ id: 'r-terminal', status }]), undefined, status);
++    assert.ok(reservationStatus(status).label, status);
++  }
++  for (const status of ['future_backend_status', null, undefined, 'toString', '__proto__']) {
++    const meta = reservationStatus(status);
++    assert.equal(meta.label, 'Estado por actualizar');
++    assert.equal(meta.tone, 'neutral');
++    assert.equal(reservationTab(status), 'current');
++  }
++});
+--- before/app/src/app/driver/index.js
++++ after/app/src/app/driver/index.js
+@@ -5,17 +5,17 @@
+ import { Header, Screen } from '../../components/layout';
+ import { Button, Chip, Segmented, Txt } from '../../components/ui';
+ import { EmptyState, ErrorState, LoadingState } from '../../components/states';
+ import { ReservationCard, SpaceCard } from '../../components/parking';
+ import { SchematicMap } from '../../components/SchematicMap';
+ import { api } from '../../api';
+ import { useApp } from '../../state/AppContext';
+ import { useQuery } from '../../state/useQuery';
+-import { VEHICLES } from '../../domain/rules';
++import { VEHICLES, openReservation } from '../../domain/rules';
+ import { font, radius, softShadow, space } from '../../theme';
+ import { usePreferences, useStyles } from '../../state/Preferences';
+ 
+ const FILTERS = [
+   { key: 'covered', label: 'Techado', icon: 'umbrella-outline' },
+   { key: 'noKeys', label: 'Sin dejar llaves', icon: 'lock-closed-outline' },
+   { key: 'formal', label: 'Parqueaderos', icon: 'business-outline' },
+   { key: 'particular', label: 'Particulares', icon: 'home-outline' },
+@@ -51,17 +51,17 @@
+   const clearFilters = () => setFilters({ covered: false, noKeys: false, kind: null });
+ 
+   const pickDestination = (d) => {
+     setDestination(d);
+     setQuery('');
+     setSelectedId(null);
+   };
+ 
+-  const active = (upcoming.data || []).find((r) => r.status === 'confirmed' || r.status === 'active');
++  const active = openReservation(upcoming.data || []);
+ 
+   if (!destination) {
+     return (
+       <Screen header={<Header title={t.home} />}>
+         <Txt variant="muted">Hola, {user.name.split(' ')[0]}</Txt>
+         <Txt variant="h1" style={{ marginTop: 2 }}>
+           ¿A dónde vas?
+         </Txt>
+--- before/app/src/app/driver/reservations.js
++++ after/app/src/app/driver/reservations.js
+@@ -3,52 +3,52 @@
+ import { useRouter } from 'expo-router';
+ import { Screen, Header } from '../../components/layout';
+ import { Segmented } from '../../components/ui';
+ import { EmptyState, ErrorState, LoadingState } from '../../components/states';
+ import { ReservationCard } from '../../components/parking';
+ import { api } from '../../api';
+ import { useQuery } from '../../state/useQuery';
+ import { space } from '../../theme';
++import { reservationTab } from '../../domain/rules';
+ 
+ const TABS = [
+-  { value: 'current', label: 'Activas', statuses: ['confirmed', 'active'] },
+-  { value: 'history', label: 'Historial', statuses: ['completed', 'cancelled'] },
++  { value: 'current', label: 'Actuales' },
++  { value: 'history', label: 'Historial' },
+ ];
+ 
+ export default function MyReservations() {
+   const router = useRouter();
+   const [tab, setTab] = useState('current');
+   const { data, loading, error, reload } = useQuery(() => api.myReservations(), []);
+-  const statuses = TABS.find((t) => t.value === tab).statuses;
+-  const list = (data || []).filter((r) => statuses.includes(r.status));
++  const list = (data || []).filter((r) => reservationTab(r.status) === tab);
+ 
+   return (
+     <Screen header={<Header title="Mis reservas" />} onRefresh={reload} refreshing={loading && !!data}>
+       <Segmented
+-        options={TABS.map((t) => ({ value: t.value, label: data ? `${t.label} (${data.filter((r) => t.statuses.includes(r.status)).length})` : t.label }))}
++        options={TABS.map((t) => ({ value: t.value, label: data ? `${t.label} (${data.filter((r) => reservationTab(r.status) === t.value).length})` : t.label }))}
+         value={tab}
+         onChange={setTab}
+       />
+       <View style={{ marginTop: space.lg }}>
+         {loading && !data ? (
+           <LoadingState />
+         ) : error && !data ? (
+           <ErrorState error={error} onRetry={reload} />
+         ) : list.length === 0 ? (
+           tab === 'current' ? (
+             <EmptyState
+               icon="calendar-outline"
+-              title="No tienes reservas activas"
++              title="No tienes reservas pendientes o activas"
+               message="Elige tu destino, compara tarifas y condiciones, y reserva antes de salir."
+               actionLabel="Buscar parqueadero"
+               onAction={() => router.navigate('/driver')}
+             />
+           ) : (
+-            <EmptyState icon="time-outline" title="Sin historial todavía" message="Aquí verás tus reservas finalizadas y canceladas." />
++            <EmptyState icon="time-outline" title="Sin historial todavía" message="Aquí verás tus reservas finalizadas, canceladas y no completadas." />
+           )
+         ) : (
+           list.map((r) => (
+             <ReservationCard key={r.id} r={r} onPress={() => router.push(`/reservation/${r.id}`)} />
+           ))
+         )}
+       </View>
+     </Screen>
+--- before/app/src/components/parking.js
++++ after/app/src/components/parking.js
+@@ -1,14 +1,14 @@
+ // Componentes del dominio: tarifas, disponibilidad, condiciones y tarjetas de espacio/reserva.
+ import { Pressable, Text, View } from 'react-native';
+ import Ionicons from '@expo/vector-icons/Ionicons';
+ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+ import { font, radius, softShadow, space } from '../theme';
+-import { AVAILABILITY, RATE_UNITS, RESERVATION_STATUS, SPACE_KINDS, VEHICLES } from '../domain/rules';
++import { AVAILABILITY, RATE_UNITS, reservationStatus, SPACE_KINDS, VEHICLES } from '../domain/rules';
+ import { formatCOP, formatDistance, formatHeight, formatDay, formatTime, formatDuration } from '../utils/format';
+ import { Badge } from './ui';
+ import { usePreferences, useStyles, useTheme } from '../state/Preferences';
+ 
+ const hidden = { accessibilityElementsHidden: true, importantForAccessibility: 'no' };
+ 
+ export const rateLabel = (rate) => (rate ? formatCOP(rate.price) + RATE_UNITS[rate.unit].short : '—');
+ 
+@@ -30,17 +30,17 @@
+ export function AvailabilityBadge({ availability, vehicle }) {
+   const a = availability[vehicle];
+   const meta = AVAILABILITY[a.status];
+   const label = a.status === 'available' || a.status === 'few' ? `${a.free} ${a.free === 1 ? 'cupo libre' : 'cupos libres'}` : meta.label;
+   return <Badge label={label} tone={meta.tone} />;
+ }
+ 
+ export function ReservationBadge({ status }) {
+-  const meta = RESERVATION_STATUS[status];
++  const meta = reservationStatus(status);
+   return <Badge label={meta.label} tone={meta.tone} />;
+ }
+ 
+ export function KindTag({ kind, hostType }) {
+   const c = useTheme();
+   const styles = useStyles(makeStyles);
+   return (
+     <View style={styles.kind}>
+@@ -204,17 +204,17 @@
+   );
+ }
+ 
+ // Tarjeta de reserva del mockup: franja de color por estado y contenido.
+ export function ReservationCard({ r, onPress, showDriver, children, style }) {
+   const c = useTheme();
+   const { tones } = usePreferences();
+   const styles = useStyles(makeStyles);
+-  const tone = tones[RESERVATION_STATUS[r.status].tone] || tones.neutral;
++  const tone = tones[reservationStatus(r.status).tone] || tones.neutral;
+   const body = (
+     <>
+       <View style={{ height: 6, backgroundColor: tone.solid }} />
+       <View style={{ padding: space.lg }}>
+         <ReservationSummary r={r} showDriver={showDriver} />
+         {children}
+       </View>
+     </>
+--- before/app/src/domain/rules.js
++++ after/app/src/domain/rules.js
+@@ -49,22 +49,39 @@
+   available: { label: 'Disponible', tone: 'success' },
+   few: { label: 'Pocos cupos', tone: 'warning' },
+   full: { label: 'Lleno', tone: 'danger' },
+   unsupported: { label: 'No recibe este vehículo', tone: 'neutral' },
+   paused: { label: 'No publicado', tone: 'neutral' },
+ };
+ 
+ export const RESERVATION_STATUS = {
++  pending: { label: 'Procesando reserva', tone: 'warning' },
+   awaiting_payment: { label: 'Pago pendiente', tone: 'warning' },
++  compensating: { label: 'Revirtiendo reserva', tone: 'warning' },
+   cancelling: { label: 'Cancelando', tone: 'warning' },
+   checking_out: { label: 'Registrando salida', tone: 'warning' },
+   confirmed: { label: 'Confirmada', tone: 'info' },
+   active: { label: 'En curso', tone: 'success' },
+   completed: { label: 'Finalizada', tone: 'neutral' },
+   cancelled: { label: 'Cancelada', tone: 'danger' },
++  failed: { label: 'No completada', tone: 'danger' },
+ };
++
++export function reservationStatus(status) {
++  return Object.hasOwn(RESERVATION_STATUS, status)
++    ? RESERVATION_STATUS[status]
++    : { label: 'Estado por actualizar', tone: 'neutral' };
++}
++
++export function reservationTab(status) {
++  return ['completed', 'cancelled', 'failed'].includes(status) ? 'history' : 'current';
++}
++
++export function openReservation(reservations) {
++  return reservations.find((reservation) => reservationTab(reservation.status) === 'current');
++}
+ 
+ export const ROLES = {
+   driver: { label: 'Conductor', home: '/driver' },
+   owner: { label: 'Dueño de parqueadero', home: '/owner' },
+   host: { label: 'Anfitrión', home: '/host' },
+ };
+--- before/server/mercadopago.py
++++ after/server/mercadopago.py
+@@ -78,44 +78,52 @@
+         # Un callback retrasado nunca resucita una orden reembolsada o anulada.
+         if payment['state'] in ['refunded', 'voided'] and state not in ['refunded', 'voided']:
+             return payment
+         payment.update(state=state, verifiedAt=now())
+         if state == 'captured':
+             payment.setdefault('paidAt', now())
+         return self.save(payment)
+ 
++    def recover_order(self, payment):
++        if payment.get('providerId'):
++            return payment
++        # Replay the persisted request and key even when the hold has expired.
++        # The first POST may have committed remotely before its response was lost.
++        order = self.request('POST', '/v1/orders', payment['request'], payment['id'] + ':create')
++        provider_id, checkout_url = order.get('id', ''), order.get('checkout_url', '')
++        require(isinstance(provider_id, str) and re.fullmatch(r'[A-Za-z0-9-]{1,80}', provider_id), 'Identificador de orden inválido.', 'PAYMENT_PROVIDER_ERROR', 502)
++        require(not self.live or not provider_id.startswith('ORDTST'), 'La orden corresponde a pruebas.', 'PAYMENT_MISMATCH', 409)
++        url = urlsplit(checkout_url)
++        require(url.scheme == 'https' and url.hostname == 'www.mercadopago.com.co' and not url.username, 'URL de pago inválida.', 'PAYMENT_PROVIDER_ERROR', 502)
++        payment.update(providerId=provider_id, checkoutUrl=checkout_url)
++        return self.checked(payment, order)
++
+     def operate(self, id, action, body):
+         self.ready()
+         with self.locks[hash(id) % len(self.locks)]:
+             payment = self.load(id)
+             if action == 'checkout':
+                 require(type(body.get('amount')) is int and body['amount'] > 0 and body.get('currency') == 'COP', 'Importe o moneda inválidos.')
+                 if payment:
+                     require(payment['amount'] == body['amount'], 'El importe de la orden cambió.', 'IDEMPOTENCY_CONFLICT', 409)
+                 else:
+                     return_url = self.public_url + '/?' + urlencode({'booking': id})
+                     payload = {'type': 'online', 'processing_mode': 'manual', 'capture_mode': 'automatic_async', 'total_amount': str(body['amount']),
+                                'external_reference': id, 'expiration_time': 'PT10M',
+                                'items': [{'title': str(body.get('description', 'Reserva Tu Espacio'))[:100], 'unit_price': str(body['amount']), 'quantity': 1}],
+                                'config': {'online': {'success_url': return_url, 'failure_url': return_url, 'pending_url': return_url, 'auto_return': 'approved', 'retries': {'allowed': False}}}}
+                     payment = self.save({'id': id, 'amount': body['amount'], 'currency': 'COP', 'state': 'creating', 'provider': 'mercadopago', 'live': self.live, 'createdAt': now(), 'request': payload})
+-                if not payment.get('providerId'):
+-                    order = self.request('POST', '/v1/orders', payment['request'], id + ':create')
+-                    provider_id, checkout_url = order.get('id', ''), order.get('checkout_url', '')
+-                    require(isinstance(provider_id, str) and re.fullmatch(r'[A-Za-z0-9-]{1,80}', provider_id), 'Identificador de orden inválido.', 'PAYMENT_PROVIDER_ERROR', 502)
+-                    require(not self.live or not provider_id.startswith('ORDTST'), 'La orden corresponde a pruebas.', 'PAYMENT_MISMATCH', 409)
+-                    url = urlsplit(checkout_url)
+-                    require(url.scheme == 'https' and url.hostname == 'www.mercadopago.com.co' and not url.username, 'URL de pago inválida.', 'PAYMENT_PROVIDER_ERROR', 502)
+-                    payment.update(providerId=provider_id, checkoutUrl=checkout_url)
+-                    payment = self.checked(payment, order)
++                payment = self.recover_order(payment)
+                 return self.public(payment)
+             require(payment, 'Pago no encontrado.', 'NOT_FOUND', 404)
+             if action == 'status':
+                 return self.public(payment)
++            if action in ['refund', 'void']:
++                payment = self.recover_order(payment)
+             require(payment.get('providerId'), 'La orden se está recuperando.', 'PAYMENT_PROVIDER_ERROR', 503)
+             if action == 'sync':
+                 payment = self.checked(payment, self.request('GET', '/v1/orders/' + payment['providerId']))
+             elif action in ['refund', 'void']:
+                 payment = self.checked(payment, self.request('GET', '/v1/orders/' + payment['providerId']))
+                 if payment['state'] == 'captured':
+                     self.request('POST', '/v1/orders/' + payment['providerId'] + '/refund', {}, id + ':refund')
+                 elif payment['state'] not in ['refunded', 'voided', 'declined']:
+--- before/server/tests/test_checkout.py
++++ after/server/tests/test_checkout.py
+@@ -149,16 +149,70 @@
+ 
+     def test_unpaid_cancel_voids_without_false_refund(self):
+         b = self.create()
+         b = self.book.dispatch('POST', '/reservations/' + b['id'] + '/cancel', {}, self.driver, {}, {})
+         self.assertEqual(b['status'], 'cancelled')
+         self.assertEqual(b['payment']['status'], 'voided')
+         self.assertFalse(any(c[1].endswith('/refund') for c in self.calls))
+ 
++    def recover_lost_creation_after_hold_expiry(self, paid):
++        from server.mercadopago import MercadoPago
++        lost = False
++
++        def remote_with_lost_response(method, path, payload=None, key=None):
++            nonlocal lost
++            result = self.remote(method, path, payload, key)
++            if path == '/v1/orders' and not lost:
++                lost = True
++                raise Problem('PAYMENT_PROVIDER_ERROR', 'Respuesta perdida después del commit remoto', 503)
++            return result
++
++        self.provider.request = remote_with_lost_response
++        self.problem('RESERVATION_PENDING', self.create)
++        with self.book.store.connect() as db:
++            booking = json.loads(db.execute('SELECT value FROM bookings').fetchone()['value'])
++        original = self.provider.load(booking['id'])
++        self.assertIsNone(original.get('providerId'))
++        self.assertEqual(len(self.orders), 1)
++        if paid:
++            order = next(iter(self.orders.values()))
++            order.update(status='processed', status_detail='accredited', total_paid_amount=order['total_amount'])
++        with self.net.engines['inventory'].store.connect(write=True) as db:
++            db.execute('UPDATE slots SET expires=? WHERE id=?', (time.time() - 1, booking['id']))
++
++        # Recovery uses only persisted data after a payment-service restart.
++        restarted = MercadoPago(self.payments.store, self.net)
++        restarted.request = self.remote
++        previous = self.payments.provider
++        self.payments.provider = restarted
++        try:
++            for _ in range(3):
++                self.book.tick()
++            result = self.book.load(booking['id'])
++            self.assertEqual(result['status'], 'failed')
++            self.assertEqual(result['payment']['status'], 'refunded' if paid else 'voided')
++            self.assertTrue(restarted.load(booking['id'])['providerId'])
++            creates = [call for call in self.calls if call[1] == '/v1/orders']
++            self.assertEqual(len(creates), 2)
++            self.assertEqual(creates[0][2:], creates[1][2:])
++            self.assertEqual(len(self.orders), 1)
++            reversals = [call for call in self.calls if call[1].endswith('/refund' if paid else '/cancel')]
++            self.assertEqual(len(reversals), 1)
++            space = self.net.engines['inventory'].dispatch('GET', '/spaces/' + booking['spaceId'], {}, None, {}, {})
++            self.assertEqual(space['availability']['car']['free'], 1)
++        finally:
++            self.payments.provider = previous
++
++    def test_lost_creation_response_expires_then_cancels_remote_order(self):
++        self.recover_lost_creation_after_hold_expiry(paid=False)
++
++    def test_lost_creation_response_expires_then_refunds_accredited_order(self):
++        self.recover_lost_creation_after_hold_expiry(paid=True)
++
+     def test_missing_credentials_cannot_fall_back_to_demo(self):
+         self.provider.configured = False
+         try:
+             self.problem('PAYMENT_UNAVAILABLE', self.create)
+             with self.payments.store.connect() as db:
+                 self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0], 0)
+         finally:
+             self.provider.configured = True

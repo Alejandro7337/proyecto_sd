@@ -1,0 +1,56 @@
+{
+  "target_identity": "37bdef4c5a51ce08278e29b62b4525bba02014e3ce5431b68c52b2200504c984",
+  "fix_delta_sha256": "072657e9926335cd37cf29513056bf6fbe97cf1152353548ed2959d88d551a97",
+  "round": 1,
+  "fix_rounds": 1,
+  "scoped_rejudgments": 1,
+  "confirmed_count": 3,
+  "confirmed_fixed": [
+    "JD-01",
+    "JD-02",
+    "JD-03"
+  ],
+  "suspect_count": 5,
+  "suspect_unmodified": [
+    "S-01",
+    "S-02",
+    "S-03",
+    "S-04",
+    "S-05"
+  ],
+  "contradiction_count": 0,
+  "info_count": 3,
+  "fix_work_units": [
+    "recuperación idempotente de orden remota",
+    "navegación móvil hacia reservas pendientes",
+    "metadatos y fallback de estados"
+  ],
+  "scoped_rejudgment": "approved",
+  "terminal_state": "escalated",
+  "reason": "Ambos jueces aprobaron las tres correcciones sin hallazgos nuevos. Cinco hallazgos graves de un solo juez quedan expresamente fuera del alcance por decisión del usuario; S-01 bloquea publicación segura.",
+  "skill_resolution": "paths-injected",
+  "artifacts": [
+    "ledger.json",
+    "scope.json",
+    "user-decision.json",
+    "suspect-verification.json",
+    "fix-round-1.md",
+    "round-1-fix-delta.patch",
+    "round-1-manifest.json",
+    "rejudgment-a-round-1.json",
+    "rejudgment-b-round-1.json"
+  ],
+  "release_authority": false,
+  "final_verification": {
+    "tests_passed": 85,
+    "template_assertions": 99,
+    "expo_syntax_files": 54,
+    "http_processes": "skipped: sandbox socket restrictions",
+    "browser": "not verified: sandbox Chrome restriction",
+    "expo_lint": "blocked: dependencies absent, global ESLint 6.4",
+    "typescript": "not configured/installed; offline command ENOTCACHED",
+    "compose": "configuration validated only",
+    "bank_transactions": "not performed; fixtures only",
+    "report": "artifacts/verification/report.json"
+  }
+}

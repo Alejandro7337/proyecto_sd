@@ -8,23 +8,23 @@ import { ReservationCard } from '../../components/parking';
 import { api } from '../../api';
 import { useQuery } from '../../state/useQuery';
 import { space } from '../../theme';
+import { reservationTab } from '../../domain/rules';
 
 const TABS = [
-  { value: 'current', label: 'Activas', statuses: ['confirmed', 'active'] },
-  { value: 'history', label: 'Historial', statuses: ['completed', 'cancelled'] },
+  { value: 'current', label: 'Actuales' },
+  { value: 'history', label: 'Historial' },
 ];
 
 export default function MyReservations() {
   const router = useRouter();
   const [tab, setTab] = useState('current');
   const { data, loading, error, reload } = useQuery(() => api.myReservations(), []);
-  const statuses = TABS.find((t) => t.value === tab).statuses;
-  const list = (data || []).filter((r) => statuses.includes(r.status));
+  const list = (data || []).filter((r) => reservationTab(r.status) === tab);
 
   return (
     <Screen header={<Header title="Mis reservas" />} onRefresh={reload} refreshing={loading && !!data}>
       <Segmented
-        options={TABS.map((t) => ({ value: t.value, label: data ? `${t.label} (${data.filter((r) => t.statuses.includes(r.status)).length})` : t.label }))}
+        options={TABS.map((t) => ({ value: t.value, label: data ? `${t.label} (${data.filter((r) => reservationTab(r.status) === t.value).length})` : t.label }))}
         value={tab}
         onChange={setTab}
       />
@@ -37,13 +37,13 @@ export default function MyReservations() {
           tab === 'current' ? (
             <EmptyState
               icon="calendar-outline"
-              title="No tienes reservas activas"
+              title="No tienes reservas pendientes o activas"
               message="Elige tu destino, compara tarifas y condiciones, y reserva antes de salir."
               actionLabel="Buscar parqueadero"
               onAction={() => router.navigate('/driver')}
             />
           ) : (
-            <EmptyState icon="time-outline" title="Sin historial todavía" message="Aquí verás tus reservas finalizadas y canceladas." />
+            <EmptyState icon="time-outline" title="Sin historial todavía" message="Aquí verás tus reservas finalizadas, canceladas y no completadas." />
           )
         ) : (
           list.map((r) => (

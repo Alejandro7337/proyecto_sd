@@ -1,0 +1,20 @@
+{
+  "findings": [
+    {
+      "location": "scripts/preparar-entrega.py:70-73",
+      "severity": "WARNING",
+      "claim": "El pase explícito de artefactos omite el filtro excluded y puede incluir .env privados en el ZIP.",
+      "evidence_class": "deterministic",
+      "causal_disposition": "introduced",
+      "proof_refs": [
+        "El bucle fuente aplica excluded; el bucle adicional de artifacts/verification sólo comprueba p.is_file()."
+      ]
+    }
+  ],
+  "evidence": [
+    "Revisados sólo los cuatro artefactos de ronda 2 y verificado SHA256 del delta.",
+    "Sin defectos graves restantes dentro de S-01..05, I-01..03 y OPS-01..03.",
+    "Helper nativo reconstruido del delta ejecutado: alta y cinco casos de coordenadas inválidas correctos.",
+    "Sin inspección del otro juez, navegador, banco, certificados ni despliegue."
+  ]
+}

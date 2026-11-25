@@ -11,7 +11,10 @@ const qs = (params) =>
 export const api = {
   // Autenticación y usuarios
   login: (email, password, role) => request('POST', '/auth/login', { email, password, role }),
+  logout: () => request('POST', '/auth/logout'),
   register: (data) => request('POST', '/auth/register', data),
+  region: () => request('GET', '/region'),
+  getReceipt: (id) => request('GET', `/reservations/${id}/receipt`),
   me: () => request('GET', '/me'),
   updateMe: (data) => request('PATCH', '/me', data),
 

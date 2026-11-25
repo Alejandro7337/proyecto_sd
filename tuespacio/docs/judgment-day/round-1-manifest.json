@@ -1,0 +1,36 @@
+{
+  "original_target": "37bdef4c5a51ce08278e29b62b4525bba02014e3ce5431b68c52b2200504c984",
+  "fix_delta_sha256": "072657e9926335cd37cf29513056bf6fbe97cf1152353548ed2959d88d551a97",
+  "round": 1,
+  "changed_files": [
+    {
+      "path": "app/scripts/mock.test.mjs",
+      "sha256": "5800d819e5c325b2f2f15bc31ec54a6351bd8618e7037b2afb2c0e4438fb03db"
+    },
+    {
+      "path": "app/src/app/driver/index.js",
+      "sha256": "a5048cc16ada8dbe7e5a2f658fd6d40ca49e53cbf820232e595136c8e6e8bf01"
+    },
+    {
+      "path": "app/src/app/driver/reservations.js",
+      "sha256": "0a3acc57692f6f4157d8c03a91e811e3a92b8921b19306f7f34a63c09827c062"
+    },
+    {
+      "path": "app/src/components/parking.js",
+      "sha256": "06f586df4cc9c92d7a8cfaff6f56e1202ab1da1b9f116b4c848da5e1a7fea9f2"
+    },
+    {
+      "path": "app/src/domain/rules.js",
+      "sha256": "98420e506dabc4f520cb67225d17326f36dc6dcc87358713b361ed7597ef38bb"
+    },
+    {
+      "path": "server/mercadopago.py",
+      "sha256": "1e0938b1078a6d433747911c35b5e3ffa1aed3794586ac59acbb2f05b29bc9a3"
+    },
+    {
+      "path": "server/tests/test_checkout.py",
+      "sha256": "09fd3ab1d866669700b1a5e6f804d3ef759aa904a0cc670acdfa34bae6f7f421"
+    }
+  ],
+  "scope": "JD-01, JD-02, JD-03 only; fix-caused regressions allowed. Five suspect IDs explicitly excluded by user."
+}

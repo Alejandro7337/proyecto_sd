@@ -109,7 +109,7 @@ const makeStyles = (c) => ({
     borderColor: c.border,
   },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: c.white, fontSize: 20, fontWeight: '900' },
+  avatarText: { color: c.dark ? c.navy : c.white, fontSize: 20, fontWeight: '700' },
   heroName: { color: c.white, fontSize: font.md, fontWeight: '800' },
   heroMeta: { color: 'rgba(255,255,255,0.65)', fontSize: font.xs, marginTop: 2 },
 });

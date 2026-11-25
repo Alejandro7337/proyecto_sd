@@ -139,7 +139,7 @@ const makeStyles = (c) => ({
   root: { flex: 1, backgroundColor: c.navy },
   scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.md },
   back: { width: 44, height: 44, justifyContent: 'center', marginLeft: -8, marginBottom: space.lg },
-  brand: { color: c.accent, fontSize: font.xs, fontWeight: '800', letterSpacing: 1.8, textTransform: 'uppercase', marginTop: space.xxl },
+  brand: { color: c.onBrandAccent, fontSize: font.xs, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', marginTop: space.xxl },
   headline: { color: c.white, fontSize: 34, fontWeight: '900', letterSpacing: -1, lineHeight: 40, marginTop: space.md },
   sub: { color: 'rgba(255,255,255,0.65)', fontSize: font.sm, lineHeight: 22, marginTop: space.sm, maxWidth: 300 },
   card: { backgroundColor: c.card, borderRadius: radius.xl, padding: space.xl, marginTop: space.xxl },

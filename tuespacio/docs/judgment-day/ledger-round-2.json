@@ -1,0 +1,146 @@
+{
+  "target_identity": "37bdef4c5a51ce08278e29b62b4525bba02014e3ce5431b68c52b2200504c984",
+  "target_path": "/tmp/tu-espacio-judgment-target",
+  "scope_manifest": "scope.json",
+  "round": 2,
+  "confirmed": [
+    {
+      "id": "JD-01",
+      "severity": "HIGH",
+      "location": "tuespacio/server/bookings.py:102",
+      "claim": "La pérdida de respuesta al crear una orden deja compensación sin providerId si el hold vence antes de recuperar.",
+      "judges": [
+        "A",
+        "B"
+      ],
+      "proof": "Ambos reprodujeron orden remota creada, respuesta perdida, slot vencido y tres ticks: compensating/creating/providerId None."
+    },
+    {
+      "id": "JD-02",
+      "severity": "HIGH",
+      "location": "tuespacio/app/src/app/driver/reservations.js:12",
+      "claim": "awaiting_payment desaparece de ambas pestañas móviles y del acceso destacado.",
+      "judges": [
+        "A",
+        "B"
+      ],
+      "proof": "Filtros sólo admiten confirmed/active y completed/cancelled; creación alojada devuelve awaiting_payment."
+    },
+    {
+      "id": "JD-03",
+      "severity": "HIGH",
+      "location": "tuespacio/app/src/domain/rules.js:56",
+      "claim": "failed, pending y compensating no tienen metadatos; ReservationBadge rompe al acceder meta.label.",
+      "judges": [
+        "A",
+        "B"
+      ],
+      "proof": "Ambos ejecutaron la tabla real en Node y el flujo de pago rechazado con fixtures."
+    }
+  ],
+  "suspect": [
+    {
+      "id": "S-01",
+      "severity": "CRITICAL",
+      "judge": "A",
+      "location": "tuespacio/server/service.py:111",
+      "claim": "Gateway reenvía /internal/slots con clave interna; otro usuario puede liberar un cupo ajeno.",
+      "proof": "A reprodujo reserva confirmed, otro conductor y release por Gateway; aumentó el cupo libre sin cambiar la reserva."
+    },
+    {
+      "id": "S-02",
+      "severity": "HIGH",
+      "judge": "A",
+      "location": "tuespacio/server/bookings.py:109",
+      "claim": "Consultar estado no reconcilia con proveedor si no llega webhook; un pago aprobado acaba reembolsado al vencer.",
+      "proof": "Orden remota acreditada sin evento: GET/tick mantuvieron awaiting_payment; al vencer acabó cancelled/refunded."
+    },
+    {
+      "id": "S-03",
+      "severity": "HIGH",
+      "judge": "B",
+      "location": "tuespacio/server/locations.py:89",
+      "claim": "Photon público rechaza lang es/pt/ja explícitos que no están importados.",
+      "proof": "B cotejó RequestFactoryBase.java y README oficiales. Falta solicitud real desde este entorno."
+    },
+    {
+      "id": "S-04",
+      "severity": "HIGH",
+      "judge": "B",
+      "location": "tuespacio/app/src/components/SpaceForm.js:53",
+      "claim": "Crear espacio nativo omite status y location requeridos por backend.",
+      "proof": "SpaceForm.toPayload sólo añade status al editar; no hay location. Inventory.validate exige status y coordenadas en producción."
+    },
+    {
+      "id": "S-05",
+      "severity": "HIGH",
+      "judge": "B",
+      "location": "tuespacio/web/app.js:241",
+      "claim": "La interfaz anuncia pagos de prueba y datos ficticios incluso con Mercado Pago live.",
+      "proof": "Sólo el botón demo está condicionado; noCharges y demo permanecen incondicionales en acceso, navegación y cabecera."
+    }
+  ],
+  "contradictions": [],
+  "info": [
+    {
+      "id": "I-01",
+      "judges": [
+        "A"
+      ],
+      "claim": "Un anfitrión puede cambiar pending/paused a published aunque reservas de producción después lo rechaza."
+    },
+    {
+      "id": "I-02",
+      "judges": [
+        "B"
+      ],
+      "claim": "La contraseña mínima de producción es 12, pero mensaje e input anuncian 6."
+    },
+    {
+      "id": "I-03",
+      "judges": [
+        "A",
+        "B"
+      ],
+      "claim": "Webhook busca providerId recorriendo todo el historial de intentos sin índice."
+    }
+  ],
+  "skill_resolution": "paths-injected",
+  "skills": [
+    "/home/david/.claude/skills/judgment-day/SKILL.md",
+    "/home/david/.claude/skills/impeccable/SKILL.md",
+    "/home/david/.codex/skills/.system/review-agent/SKILL.md",
+    "/home/david/Escritorio/SD/proyecto_sd-main/.claude/skills/ui-ux-pro-max/SKILL.md"
+  ],
+  "authorization": "Usuario autoriza corregir lo necesario y subirlo. Revoca exclusión previa de S-01..05. Autoriza corregir también I-01..03; se conserva procedencia original de los hallazgos.",
+  "limits": "Máximo dos rondas de corrección y dos reevaluaciones acotadas. Sin sockets, Chrome, compilación Expo ni transacciones reales.",
+  "parent_ops": [
+    {
+      "id": "OPS-01",
+      "paths": [
+        "server/admin.py",
+        "server/tests/test_admin.py"
+      ],
+      "purpose": "Alta local de administradores sin contraseña en argumentos; aprobación auditada de espacios reales con coordenadas."
+    },
+    {
+      "id": "OPS-02",
+      "paths": [
+        "server/run.py",
+        "compose.production.yaml",
+        "Caddyfile",
+        ".env.example",
+        ".dockerignore",
+        "../.gitignore"
+      ],
+      "purpose": "Volumen real separado, proxy HTTPS, no puertos internos publicados, detención completa si cae servicio y exclusión de entornos privados."
+    },
+    {
+      "id": "OPS-03",
+      "paths": [
+        "scripts/preparar-entrega.py"
+      ],
+      "purpose": "Excluir todos los .env privados del parche y respaldo, conservando sólo .env.example."
+    }
+  ]
+}

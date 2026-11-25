@@ -1,0 +1,43 @@
+name: tu-espacio-production
+services:
+  app:
+    build: .
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    env_file: ["${PRODUCTION_ENV_FILE:-.env}"]
+    environment:
+      APP_ENV: production
+      PAYMENT_PROVIDER: mercadopago
+      MP_LIVE_MODE: "true"
+    command: [python, -m, server.run, --regions, co, --host, 0.0.0.0, --data, /data]
+    volumes: [production-data:/data]
+    expose: ["8080"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/region', timeout=2)"]
+      interval: 15s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
+    networks: [application]
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: "${PUBLIC_HOST:?Configura PUBLIC_HOST con el dominio del comercio}"
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - proxy-data:/data
+      - proxy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks: [application]
+networks:
+  application: {}
+volumes:
+  production-data: {}
+  proxy-data: {}
+  proxy-config: {}

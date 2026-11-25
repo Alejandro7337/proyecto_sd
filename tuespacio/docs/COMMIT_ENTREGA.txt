@@ -1,0 +1,19 @@
+feat: completa reservas, pagos y consola de Tu Espacio
+
+Añade servicios regionales persistentes, reserva idempotente del último cupo,
+recuperación y compensación, búsqueda por destinos y coordenadas, Mercado Pago
+Checkout Pro, recibos autorizados y consola por rol. Corrige rutas internas,
+conciliación sin webhook, estados móviles y aprobación de espacios.
+
+Incluye configuración de despliegue con HTTPS y herramientas de administración.
+Validación local: 101 pruebas y 105 comprobaciones de cliente/plantillas.
+
+Pendientes de activación, documentados en docs/PENDIENTES_PRODUCCION.md:
+- Credenciales Mercado Pago y webhook configurados fuera de Git.
+- Dominio, DNS/HTTPS y geocodificador de producción.
+- Compra/devolución real, pruebas de navegador, procesos y compilación Expo.
+- Alta de administrador, aprobación de espacios y validación comercial/fiscal.
+- Respaldo y restauración del volumen productivo.
+
+No se afirma un despliegue ni cobros reales verificados. Estos pendientes quedan
+para activación de producción y no bloquean la entrega del código en una rama.

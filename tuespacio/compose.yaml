@@ -1,0 +1,57 @@
+name: tu-espacio
+x-region: &region
+  build: .
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/region', timeout=2)"]
+    interval: 15s
+    timeout: 3s
+    start_period: 35s
+    retries: 3
+services:
+  co:
+    <<: *region
+    command: ["python", "-m", "server.run", "--regions", "co", "--host", "0.0.0.0", "--data", "/data"]
+    ports: ["127.0.0.1:8080:8080"]
+    volumes: ["co-data:/data"]
+    networks: [co]
+  br:
+    <<: *region
+    command: ["python", "-m", "server.run", "--regions", "br", "--host", "0.0.0.0", "--data", "/data"]
+    ports: ["127.0.0.1:8090:8080"]
+    volumes: ["br-data:/data"]
+    networks: [br]
+  us:
+    <<: *region
+    command: ["python", "-m", "server.run", "--regions", "us", "--host", "0.0.0.0", "--data", "/data"]
+    ports: ["127.0.0.1:8100:8080"]
+    volumes: ["us-data:/data"]
+    networks: [us]
+  fr:
+    <<: *region
+    command: ["python", "-m", "server.run", "--regions", "fr", "--host", "0.0.0.0", "--data", "/data"]
+    ports: ["127.0.0.1:8110:8080"]
+    volumes: ["fr-data:/data"]
+    networks: [fr]
+  jp:
+    <<: *region
+    command: ["python", "-m", "server.run", "--regions", "jp", "--host", "0.0.0.0", "--data", "/data"]
+    ports: ["127.0.0.1:8120:8080"]
+    volumes: ["jp-data:/data"]
+    networks: [jp]
+networks:
+  co: {}
+  br: {}
+  us: {}
+  fr: {}
+  jp: {}
+volumes:
+  co-data: {}
+  br-data: {}
+  us-data: {}
+  fr-data: {}
+  jp-data: {}

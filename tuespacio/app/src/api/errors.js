@@ -10,6 +10,10 @@ export class ApiError extends Error {
 }
 
 export const ERROR_COPY = {
+  PRICE_CHANGED: { title: 'La tarifa cambió', message: 'Actualiza el espacio y revisa el nuevo total antes de reservar. No se realizó ningún cobro.' },
+  RESERVATION_PENDING: { title: 'Estamos recuperando tu reserva', message: 'La operación puede continuar en el servidor. Reintenta esta solicitud con la misma llave para conocer el resultado.' },
+  REQUEST_TIMEOUT: { title: 'La respuesta tardó demasiado', message: 'Reintenta la misma solicitud. No crees otra reserva hasta conocer el resultado de esta.' },
+  SERVICE_UNAVAILABLE: { title: 'Servicio temporalmente sin respuesta', message: 'Reintenta en unos segundos. Conservaremos la misma solicitud.' },
   NETWORK: { title: 'Sin conexión', message: 'No pudimos comunicarnos con el servidor. Revisa tu conexión e inténtalo de nuevo.' },
   SPACE_TAKEN: { title: 'El cupo ya fue tomado', message: 'Otro conductor reservó el último cupo hace un instante. No se realizó ningún cobro.' },
   PAYMENT_DECLINED: { title: 'Pago rechazado', message: 'El medio de pago no autorizó la operación. Liberamos el cupo y no se realizó ningún cobro.' },

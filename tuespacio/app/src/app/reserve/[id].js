@@ -7,6 +7,7 @@ import { Badge, Button, Card, Chip, Divider, IconCircle, Note, Row, SectionTitle
 import { ErrorState, LoadingState } from '../../components/states';
 import { SpaceCard, VehicleIcon, rateLabel } from '../../components/parking';
 import { api, newIdempotencyKey } from '../../api';
+import { apiMode } from '../../api/transport';
 import { describeError } from '../../api/errors';
 import { faults, setFault } from '../../api/mock/demoControls';
 import { useApp } from '../../state/AppContext';
@@ -31,6 +32,8 @@ export default function Reserve() {
   const { invalidate, showToast } = useApp();
   const colors = useTheme();
   const styles = useStyles(makeStyles);
+  const region = useQuery(() => api.region(), [], { enabled: apiMode === 'http' });
+  const hosted = region.data?.payments?.provider === 'mercadopago';
   const { data: s, loading, error, reload } = useQuery(() => api.getSpace(id), [id]);
 
   const [arrival, setArrival] = useState(30);
@@ -40,6 +43,7 @@ export default function Reserve() {
   const [step, setStep] = useState(0);
   const [failure, setFailure] = useState(null);
   const idemKey = useRef(newIdempotencyKey());
+  const submittedBody = useRef(null);
   const timer = useRef(null);
 
   useEffect(() => () => clearInterval(timer.current), []);
@@ -60,27 +64,33 @@ export default function Reserve() {
   const endAt = new Date(startAt.getTime() + duration * 60000);
 
   const submit = async () => {
-    setFault('nextReservation', simulation);
+    if (!hosted) setFault('nextReservation', simulation);
     setPhase('processing');
     setStep(0);
     setFailure(null);
     timer.current = setInterval(() => setStep((x) => Math.min(x + 1, STEPS.length - 1)), 650);
     try {
-      const r = await api.createReservation({
+      submittedBody.current ||= {
         spaceId: s.id,
         vehicle,
         startAt: startAt.toISOString(),
         durationMin: duration,
+        expectedAmount: amount,
         idempotencyKey: idemKey.current,
-      });
+        scenario: !hosted && simulation === 'declined' ? 'declined' : 'none',
+      };
+      const r = await api.createReservation(submittedBody.current);
       clearInterval(timer.current);
       invalidate();
-      showToast(`Reserva confirmada · ${r.code}`);
+      showToast(`${r.status === 'awaiting_payment' ? 'Completa el pago' : 'Reserva confirmada'} · ${r.code}`);
       router.replace({ pathname: `/reservation/${r.id}`, params: { fresh: '1' } });
     } catch (e) {
       clearInterval(timer.current);
       // Un fallo de red puede reintentarse con la misma llave; un aborto definitivo usa una nueva.
-      if (e.code !== 'NETWORK') idemKey.current = newIdempotencyKey();
+      if (!['NETWORK', 'REQUEST_TIMEOUT', 'RESERVATION_PENDING', 'SERVICE_UNAVAILABLE'].includes(e.code) && e.status < 500) {
+        idemKey.current = newIdempotencyKey();
+        submittedBody.current = null;
+      }
       setSimulation('none');
       setFailure(e);
       setPhase('error');
@@ -109,7 +119,7 @@ export default function Reserve() {
           })}
         </Card>
         <Note style={{ marginTop: space.lg }}>
-          Mientras confirmamos, el cupo queda retenido hasta {HOLD_MINUTES} minutos. Si algo falla, se libera y no se realiza ningún cobro.
+          Mientras confirmamos, el cupo queda retenido hasta {HOLD_MINUTES} minutos. Si se pierde la respuesta, reintenta la misma solicitud para consultar el resultado sin duplicarla.
         </Note>
       </Screen>
     );
@@ -161,7 +171,7 @@ export default function Reserve() {
           title={`Reservar y pagar ${formatCOP(amount)}`}
           icon="lock-closed-outline"
           onPress={submit}
-          disabled={s.availability[vehicle].free <= 0 && simulation === 'none'}
+          disabled={(s.availability[vehicle].free <= 0 && simulation === 'none') || (apiMode === 'http' && (!region.data || region.data.payments?.available === false))}
         />
       }
     >
@@ -211,16 +221,16 @@ export default function Reserve() {
         <View style={styles.payment}>
           <Ionicons name="card-outline" size={20} color={colors.accent} />
           <View style={{ flex: 1 }}>
-            <Txt>Medio de pago de prueba •••• 4242</Txt>
-            <Txt variant="small">Simulado. No se realiza ningún cobro real.</Txt>
+            <Txt>{hosted ? 'Mercado Pago' : 'Medio de pago de prueba •••• 4242'}</Txt>
+            <Txt variant="small">{hosted ? 'Completa el pago en la pasarela. Confirmamos al verificar el cobro.' : 'Simulado. No se realiza ningún cobro real.'}</Txt>
           </View>
         </View>
       </Card>
-      <Note tone="warning" icon="help-circle-outline" style={{ marginTop: space.md }}>
-        Supuestos del prototipo: el cálculo por hora iniciada, las opciones de llegada y duración, y los medios de pago reales están por definir.
+      <Note icon="shield-checkmark-outline" style={{ marginTop: space.md }}>
+        {hosted ? 'Tu Espacio no recibe los datos de tu tarjeta. Si abandonas el pago, liberaremos la retención al vencer los 10 minutos.' : 'Entorno de demostración. Los pagos no mueven dinero real.'}
       </Note>
 
-      <View style={styles.sim}>
+      {!hosted ? <View style={styles.sim}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.sm }}>
           <Ionicons name="flask-outline" size={16} color={colors.textMuted} />
           <Text style={styles.simTitle}>Solo prototipo · simular resultado</Text>
@@ -230,7 +240,7 @@ export default function Reserve() {
             <Chip key={o.value} label={o.label} selected={simulation === o.value} onPress={() => setSimulation(o.value)} />
           ))}
         </View>
-      </View>
+      </View> : null}
     </Screen>
   );
 }

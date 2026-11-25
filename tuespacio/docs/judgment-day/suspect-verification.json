@@ -1,0 +1,26 @@
+{
+  "S-01": {
+    "status": "reproduced",
+    "evidence": "Snapshot aislado: otro conductor llamó POST /internal/slots/{reserva}/release vía Gateway. Resultado ok true; reserva siguió confirmed. No se modificó el código revisado."
+  },
+  "S-02": {
+    "status": "reproduced",
+    "evidence": "Coordinador reprodujo en snapshot aislado: orden acreditada sin evento permanece awaiting_payment; tras vencer createdAt termina cancelled/refunded."
+  },
+  "S-03": {
+    "status": "confirmed-from-primary-source",
+    "evidence": "Photon RequestFactoryBase.java líneas 67-91 rechaza lang explícito no importado y resuelve Accept-Language con fallback seguro. README líneas 55-60 documenta en/de/fr/local.",
+    "sources": [
+      "https://raw.githubusercontent.com/komoot/photon/master/src/main/java/de/komoot/photon/query/RequestFactoryBase.java",
+      "https://raw.githubusercontent.com/komoot/photon/master/README.md"
+    ]
+  },
+  "S-04": {
+    "status": "confirmed-from-call-chain",
+    "evidence": "SpaceForm.toPayload sólo añade status fuera de create, nunca location; host-space/[id] lo envía directamente a Inventory.validate que exige esos campos."
+  },
+  "S-05": {
+    "status": "confirmed-from-render-path",
+    "evidence": "auth-note, sidebar-bottom y page-footer usan demo/noCharges sin condicionar region.demo; /region permite demo=false y payments.live=true."
+  }
+}
