@@ -217,6 +217,15 @@ class HttpContractTests(unittest.TestCase):
         finally:
             self.config.production = previous
 
+    def test_15_region_list_contains_only_running_gateways(self):
+        with patch.dict('os.environ', {'PUBLIC_REGION_PORTS': '{"co":18080,"jp":18090}'}):
+            status, payload = self.api('GET', '/regions')
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            [(region['id'], region['port']) for region in payload['data']],
+            [('co', 18080), ('jp', 18090)],
+        )
+
 if __name__=='__main__':
     unittest.main()
 

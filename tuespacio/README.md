@@ -19,7 +19,7 @@ python3 -m server.run --regions all
 | Francia · Paris | http://127.0.0.1:8110 | EUR | Europe/Paris |
 | Japón · 東京 | http://127.0.0.1:8120 | JPY | Asia/Tokyo |
 
-El selector de región cambia de gateway; cada región tiene sus propias cuentas, sesiones y reservas. Para ejecutar solo Colombia: `python3 -m server.run --regions co`. Para otros puertos: `--port 9080` (las siguientes regiones suman 10). `Ctrl+C` termina los procesos lanzados por este comando. Los datos permanecen en `.runtime/`.
+El selector de región cambia de gateway; cada región tiene sus propias cuentas, sesiones y reservas, y solo muestra las regiones iniciadas. Para usar todos los idiomas, inicia todas las regiones con `python3 -m server.run --regions all`. Para ejecutar solo Colombia: `python3 -m server.run --regions co`. Para otros puertos: `--port 9080` (las siguientes regiones suman 10). `Ctrl+C` termina los procesos lanzados por este comando. Los datos permanecen en `.runtime/`.
 
 ## Cuentas de prueba
 

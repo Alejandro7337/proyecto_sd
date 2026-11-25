@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { formatMoney, formatRegionalDate } from '../../web/format.js';
 import { messages } from '../../web/i18n.js';
+import { regionUrl } from '../../web/region-url.js';
 import { safeStorage } from '../../web/storage.js';
 
 const regions = JSON.parse(readFileSync(new URL('../regions.json', import.meta.url)));
@@ -36,6 +37,18 @@ for (const region of regions) {
 }
 test('el formateador rechaza importes fraccionarios y no finitos', () => {
   for (const value of [NaN, Infinity, .1, '100', null]) assert.throws(()=>formatMoney(value, regions[0]), TypeError);
+});
+test('el cambio de región usa subdominios de puerto en Codespaces', () => {
+  assert.equal(
+    regionUrl('https://probable-pancake-8120.app.github.dev/#regions', 8090),
+    'https://probable-pancake-8090.app.github.dev/'
+  );
+});
+test('el cambio de región conserva el puerto local', () => {
+  assert.equal(
+    regionUrl('http://127.0.0.1:8080/#regions', 8090),
+    'http://127.0.0.1:8090/'
+  );
 });
 test('preferencias funcionan cuando el navegador bloquea almacenamiento', () => {
   const storage=safeStorage('__unavailable_test_storage');

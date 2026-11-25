@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { icon } from '../../web/icons.js';
 import { messages } from '../../web/i18n.js';
 import { formatMoney, formatRegionalDate } from '../../web/format.js';
+import { regionUrl } from '../../web/region-url.js';
 import { safeStorage } from '../../web/storage.js';
 
 // Prueba cliente, plantillas y contratos HTTP; el DOM mínimo no verifica CSS ni gestos.
@@ -31,7 +32,7 @@ const check=(condition,description)=>{assert.ok(condition,description);assertion
 
 async function client(region='co'){
   const root=element(),dialog=element(),toast=element();dialog.open=false;dialog.showModal=()=>dialog.open=true;dialog.close=()=>dialog.open=false;
-  const ctx=vm.createContext({icon,messages,formatMoney,formatRegionalDate,URL,URLSearchParams,Intl,Date,console,AbortController,FormData,Blob,
+  const ctx=vm.createContext({icon,messages,formatMoney,formatRegionalDate,regionUrl,URL,URLSearchParams,Intl,Date,console,AbortController,FormData,Blob,
     crypto:{randomUUID},sessionStorage:storage(),localStorage:storage(),
     setInterval:()=>0, setTimeout:(fn,n)=>{const id=setTimeout(fn,n);timers.add(id);return id},clearTimeout:id=>{clearTimeout(id);timers.delete(id)},
     fetch:async(path,opts)=>{const r=await rpc(region,path,opts);return{ok:r.status<400,status:r.status,json:async()=>r.payload}},

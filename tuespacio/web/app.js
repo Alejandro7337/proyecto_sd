@@ -1,6 +1,7 @@
 import { icon } from "./icons.js";
 import { messages } from "./i18n.js";
 import { formatMoney, formatRegionalDate } from "./format.js";
+import { regionUrl } from "./region-url.js";
 import { safeStorage } from "./storage.js";
 
 const sessionStore = safeStorage("sessionStorage");
@@ -1637,10 +1638,7 @@ document.addEventListener("change", async (event) => {
   if (event.target.id === "region-select") {
     const region = s.regions.find((r) => r.id === event.target.value);
     if (region && region.id !== s.region.id) {
-      const url = new URL(location.href);
-      url.port = region.port;
-      url.hash = "";
-      location.assign(url);
+      location.assign(regionUrl(location.href, region.port));
     }
   }
   if (event.target.id === "sort") {

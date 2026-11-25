@@ -49,7 +49,7 @@ class Gateway:
                 'Ruta no encontrada.', 'NOT_FOUND', 404)
         if path == '/regions' and method == 'GET':
             ports = json.loads(os.environ.get('PUBLIC_REGION_PORTS', '{"co":8080,"br":8090,"us":8100,"fr":8110,"jp":8120}'))
-            return [{**r, 'port': ports.get(r['id'], 8080 + i * 10)} for i, r in enumerate(REGIONS)]
+            return [{**r, 'port': ports[r['id']]} for r in REGIONS if r['id'] in ports]
         if path == '/region' and method == 'GET':
             return {**cfg.region, 'demo': not cfg.production, 'passwordMinLength': 12 if cfg.production else 6, 'payments': {'provider': cfg.payment_provider,
                     'available': cfg.payment_provider == 'demo' or cfg.region['id'] == 'co' and all(os.environ.get(k) for k in ['MP_ACCESS_TOKEN', 'MP_WEBHOOK_SECRET', 'MP_COLLECTOR_ID', 'APP_PUBLIC_URL']),
